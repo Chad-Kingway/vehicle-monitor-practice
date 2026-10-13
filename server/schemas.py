@@ -99,6 +99,7 @@ class RideRequestInput(BaseModel):
     destination: Position
     passenger_count: int = Field(ge=1, strict=True)
     client_request_id: Identity | None = None
+    run_id: UUID | None = None
 
 
 class PassengerInput(BaseModel):
@@ -108,6 +109,7 @@ class PassengerInput(BaseModel):
 
 class RandomRequestInput(PassengerInput):
     client_request_id: Identity | None = None
+    run_id: UUID | None = None
 
 
 class SpeedInput(BaseModel):
@@ -126,5 +128,5 @@ class RoadRoute(BaseModel):
     origin: Position
     destination: Position
     coordinates: list[Position] = Field(min_length=2)
-    distance_meters: float = Field(gt=0, allow_inf_nan=False)
-    duration_seconds: float = Field(gt=0, allow_inf_nan=False)
+    distance_meters: float = Field(ge=0, allow_inf_nan=False)
+    duration_seconds: float = Field(ge=0, allow_inf_nan=False)

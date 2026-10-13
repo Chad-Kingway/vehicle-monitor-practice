@@ -1,4 +1,5 @@
 import asyncio
+import random
 from datetime import datetime, timezone
 from time import monotonic
 from uuid import uuid4
@@ -7,7 +8,7 @@ from fastapi import HTTPException
 
 from .dispatch import choose_vehicle, distance_meters
 from .routes import RouteError
-from .schemas import RouteQuery
+from .schemas import RideRequestInput, RouteQuery
 
 
 class Simulation:
@@ -21,7 +22,7 @@ class Simulation:
         self.idempotency = {}
         self.jobs = set()
         self.clocks = {}
-        self.vehicles = {item.id: {**item.model_dump(), 'position': item.initial_position, 'heading': item.initial_heading, 'last_report_at': None, 'task_id': None} for item in settings.vehicles}
+        self.vehicles = {item.id: {**item.model_dump(), 'position': item.initial_position, 'heading': item.initial_heading, 'last_report_at': None, 'task_id': None, 'diagnostic': False} for item in settings.vehicles}
 
     def online(self, vehicle_id):
         clock = self.clocks.get(vehicle_id)
@@ -30,7 +31,7 @@ class Simulation:
     def task_view(self, task):
         if task is None:
             return None
-        uncertain = task['status'] in ('pickup', 'transport') and not self.online(task['vehicle_id'])
+        uncertain = task['status'] in ('planning', 'pickup', 'transport') and not self.online(task['vehicle_id'])
         return {**task, 'status': 'unconfirmed' if uncertain else task['status']}
 
     def request_view(self, request):
@@ -79,17 +80,38 @@ class Simulation:
 
     async def submit(self, data):
         async with self.lock:
+            return self.submit_locked(data)
+
+    def submit_locked(self, data):
+        if data.run_id is not None and data.run_id != self.run_id:
+            raise HTTPException(409, '模擬輪次已變更，請重新取得 Server 資料。')
+        key = (data.passenger_id, data.client_request_id) if data.client_request_id else None
+        if key and key in self.idempotency:
+            return self.request_view(self.requests[self.idempotency[key]])
+        if data.passenger_count > max(item['passenger_capacity'] for item in self.vehicles.values()):
+            raise HTTPException(422, '乘車人數超過車隊最大載客上限。')
+        request = {**data.model_dump(), 'id': str(uuid4()), 'sequence': len(self.requests) + 1, 'status': 'waiting', 'task_id': None, 'vehicle_id': None, 'failure_reason': None, 'created_at': datetime.now(timezone.utc)}
+        self.requests[request['id']] = request
+        if key:
+            self.idempotency[key] = request['id']
+        self.dispatch()
+        return self.request_view(request)
+
+
+    async def submit_random(self, data):
+        async with self.lock:
+            if data.run_id is not None and data.run_id != self.run_id:
+                raise HTTPException(409, '模擬輪次已變更，請重新取得 Server 資料。')
             key = (data.passenger_id, data.client_request_id) if data.client_request_id else None
             if key and key in self.idempotency:
                 return self.request_view(self.requests[self.idempotency[key]])
-            if data.passenger_count > max(item['passenger_capacity'] for item in self.vehicles.values()):
-                raise HTTPException(422, '乘車人數超過車隊最大載客上限。')
-            request = {**data.model_dump(), 'id': str(uuid4()), 'sequence': len(self.requests) + 1, 'status': 'waiting', 'task_id': None, 'vehicle_id': None, 'failure_reason': None, 'created_at': datetime.now(timezone.utc)}
-            self.requests[request['id']] = request
-            if key:
-                self.idempotency[key] = request['id']
-            self.dispatch()
-            return self.request_view(request)
+            bounds = self.settings.random_requests
+            for _ in range(bounds.max_attempts):
+                pickup = (random.uniform(bounds.longitude_min, bounds.longitude_max), random.uniform(bounds.latitude_min, bounds.latitude_max))
+                destination = (random.uniform(bounds.longitude_min, bounds.longitude_max), random.uniform(bounds.latitude_min, bounds.latitude_max))
+                if distance_meters(pickup, destination) >= bounds.minimum_distance_meters:
+                    return self.submit_locked(RideRequestInput(**data.model_dump(), pickup=pickup, destination=destination, passenger_count=random.randint(1, max(item['passenger_capacity'] for item in self.vehicles.values()))))
+            raise HTTPException(422, '隨機起訖抽樣已達上限，未提出乘車請求。')
 
     async def cancel(self, request_id, passenger_id):
         async with self.lock:
@@ -108,6 +130,8 @@ class Simulation:
             vehicle = self.vehicles.get(vehicle_id)
             if vehicle is None:
                 raise HTTPException(404, '車輛不存在。')
+            if report.diagnostic and vehicle['task_id'] is not None:
+                raise HTTPException(409, '執行接送中的車輛不能切換道路診斷。')
             task = self.tasks.get(report.task_id)
             completed_id = None
             if report.task_id:
@@ -123,7 +147,7 @@ class Simulation:
                     raise HTTPException(409, '接送進度不得回退。')
                 if report.phase == 'completed':
                     terminal = task['transport_route'].coordinates[-1]
-                    if report.progress != 1 or distance_meters(report.position, terminal) > 50:
+                    if report.progress != 1 or min(distance_meters(report.position, terminal), distance_meters(report.position, task['destination'])) > 50:
                         raise HTTPException(409, '送達回報尚未到達送人路線終點。')
                     task.update(status='completed', phase='completed', progress=1.0, completed_at=datetime.now(timezone.utc))
                     self.requests[task['request_id']]['status'] = 'completed'
@@ -134,14 +158,14 @@ class Simulation:
                     self.requests[task['request_id']]['status'] = report.phase
             elif vehicle['task_id'] and self.tasks[vehicle['task_id']]['status'] != 'planning':
                 raise HTTPException(409, '請先取得並核對目前接送任務。')
-            vehicle.update(position=report.position, heading=report.heading, last_report_at=datetime.now(timezone.utc))
+            vehicle.update(position=report.position, heading=report.heading, diagnostic=report.diagnostic, last_report_at=datetime.now(timezone.utc))
             self.clocks[vehicle_id] = monotonic()
             self.dispatch()
             return self.report_response(vehicle, completed_id)
 
     def report_response(self, vehicle, completed_id=None):
         task = self.tasks.get(vehicle['task_id'])
-        return {'run_id': self.run_id, 'settings': self.settings, 'vehicle': self.vehicle_view(vehicle), 'task': self.task_view(task), 'completed_task_id': completed_id}
+        return {'run_id': self.run_id, 'settings': self.settings, 'vehicle': self.vehicle_view(vehicle), 'task': self.task_view(task) if task and task['status'] != 'planning' else None, 'completed_task_id': completed_id}
 
     async def close(self):
         for job in tuple(self.jobs):

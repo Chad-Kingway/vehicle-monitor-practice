@@ -9,5 +9,5 @@ def distance_meters(first, second):
 
 
 def choose_vehicle(request, vehicles, online):
-    candidates = [vehicle for vehicle in vehicles.values() if online(vehicle['id']) and vehicle['task_id'] is None and vehicle['passenger_capacity'] >= request['passenger_count']]
+    candidates = [vehicle for vehicle in vehicles.values() if not vehicle.get('diagnostic', False) and online(vehicle['id']) and vehicle['task_id'] is None and vehicle['passenger_capacity'] >= request['passenger_count']]
     return min(candidates, key=lambda vehicle: (distance_meters(vehicle['position'], request['pickup']), vehicle['id']), default=None)

@@ -10,9 +10,10 @@ DIRECTION_URL = "https://kwmap.localking.com.tw/maps/api/Directions/json"
 
 
 class RouteError(Exception):
-    def __init__(self, status_code: int, message: str):
+    def __init__(self, status_code: int, message: str, retryable: bool = False):
         super().__init__(message)
         self.status_code = status_code
+        self.retryable = retryable
 
 
 def decode_polyline(encoded: str) -> list[Position]:
@@ -97,13 +98,27 @@ def normalize_route(data: dict, query: RouteQuery) -> RoadRoute:
 
 
 class RoutePlanner:
-    def __init__(self, client: httpx.AsyncClient, api_key: str, timeout: float, concurrency: int):
+    def __init__(self, client: httpx.AsyncClient, api_key: str, timeout: float, concurrency: int, max_attempts: int = 3, retry_delay: float = 0.5):
         self.client = client
         self.api_key = api_key
         self.timeout = timeout
         self.slots = asyncio.Semaphore(concurrency)
+        self.max_attempts = max_attempts
+        self.retry_delay = retry_delay
 
     async def plan(self, query: RouteQuery) -> RoadRoute:
+        # 同點不需要查詢道路，也不以直線補造任何路段。
+        if query.origin == query.destination:
+            return RoadRoute(provider='stationary', origin=query.origin, destination=query.destination, coordinates=[query.origin, query.destination], distance_meters=0, duration_seconds=0)
+        for attempt in range(self.max_attempts):
+            try:
+                return await self.plan_once(query)
+            except RouteError as error:
+                if not error.retryable or attempt + 1 == self.max_attempts:
+                    raise
+                await asyncio.sleep(self.retry_delay * (attempt + 1))
+
+    async def plan_once(self, query: RouteQuery) -> RoadRoute:
         if not self.api_key:
             raise RouteError(503, "未設定 ROUTES_API_KEY，無法查詢勤崴道路路線。")
         try:
@@ -117,16 +132,16 @@ class RoutePlanner:
                         "Mode": "driving", "Language": "zh-TW",
                     })
         except (TimeoutError, httpx.TimeoutException):
-            raise RouteError(504, "勤崴道路路線查詢逾時。") from None
+            raise RouteError(504, "勤崴道路路線查詢逾時。", retryable=True) from None
         except httpx.RequestError:
-            raise RouteError(502, "無法連線勤崴道路路線服務。") from None
+            raise RouteError(502, "無法連線勤崴道路路線服務。", retryable=True) from None
         # 不回傳上游 URL、訊息或 HTTP 例外，避免含 Key 的資料外洩。
         if response.status_code in (401, 403):
             raise RouteError(503, "勤崴 REST 憑證或 Routes 權限遭拒，請查核服務授權。")
         if response.status_code == 429:
-            raise RouteError(503, "勤崴道路服務配額或查詢頻率受限。")
+            raise RouteError(503, "勤崴道路服務配額或查詢頻率受限。", retryable=True)
         if response.status_code != 200:
-            raise RouteError(502, f"勤崴道路服務回應 HTTP {response.status_code}。")
+            raise RouteError(502, f"勤崴道路服務回應 HTTP {response.status_code}。", retryable=response.status_code >= 500)
         try:
             data = response.json()
             if not isinstance(data, dict) or not isinstance(data.get("status"), str):
@@ -135,6 +150,8 @@ class RoutePlanner:
                 raise RouteError(503, "勤崴 REST 憑證或 Routes 權限遭拒，請查核服務授權。")
             if data["status"] == "ZERO_RESULTS":
                 raise RouteError(422, "勤崴未提供可行道路路線。")
+            if data["status"] in ("UNKNOWN_ERROR", "OVER_QUERY_LIMIT"):
+                raise RouteError(503, "勤崴道路服務暫時無法完成查詢。", retryable=True)
             if data["status"] != "OK":
                 raise RouteError(502, "勤崴未提供可用路線；請查核起訖點、REST 憑證、Routes 權限與配額。")
             if data.get("routes") == []:

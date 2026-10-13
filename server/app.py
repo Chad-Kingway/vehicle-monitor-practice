@@ -20,7 +20,7 @@ def create_app(config_path: Path = DEFAULT_CONFIG, *, route_transport=None) -> F
         settings = SimulationSettings.model_validate_json(config_path.read_text(encoding='utf-8'))
         env = {**dotenv_values(DEFAULT_CONFIG.parents[1] / '.env'), **os.environ}
         async with httpx.AsyncClient(timeout=settings.route_timeout_seconds, transport=route_transport) as client:
-            planner = RoutePlanner(client, (env.get('ROUTES_API_KEY') or '').strip(), settings.route_timeout_seconds, settings.route_concurrency_limit)
+            planner = RoutePlanner(client, (env.get('ROUTES_API_KEY') or '').strip(), settings.route_timeout_seconds, settings.route_concurrency_limit, settings.route_max_attempts, settings.route_retry_delay_seconds)
             simulation = Simulation(settings, planner)
             app.state.simulation = simulation
             app.state.route_planner = planner
@@ -45,6 +45,17 @@ def create_app(config_path: Path = DEFAULT_CONFIG, *, route_transport=None) -> F
     @app.post('/api/requests')
     async def submit_request(data: RideRequestInput):
         return await app.state.simulation.submit(data)
+
+    @app.post('/api/requests/random')
+    async def random_request(data: RandomRequestInput):
+        return await app.state.simulation.submit_random(data)
+
+    @app.put('/api/simulation/speed')
+    async def set_speed(data: SpeedInput):
+        simulation = app.state.simulation
+        async with simulation.lock:
+            simulation.settings = simulation.settings.model_copy(update={'speed_multiplier': data.speed_multiplier})
+            return {'run_id': simulation.run_id, 'settings': simulation.settings}
 
     @app.get('/api/requests')
     async def get_requests(passenger_id: str):
