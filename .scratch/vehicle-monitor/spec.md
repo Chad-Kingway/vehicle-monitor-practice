@@ -1,6 +1,6 @@
 # 車輛監控系統第一版規格
 
-Status: ready-for-agent
+Status: awaiting-validation
 Approval: confirmed
 
 ## 問題陳述（Problem Statement）
@@ -276,3 +276,5 @@ Approval: confirmed
 - Q48：使用者確認 Client 結束或無法恢復連線時保持待確認，由操作者重新開始整場模擬。
 - Q49：使用者確認整份規格已達成共同理解，定為第一版規格與人工驗收依據。
 - to-spec：依已確認討論整理問題、解決方案、使用者故事、實作決策、驗證決策與範圍外事項；保留共同理解確認，發布為 ready-for-agent。
+
+- 2026-10-13 implement-spec：03～13 功能已實作並合併至 `codex/vehicle-monitor-integration`。真實道路接送、限量生成、斷線恢復與輪次隔離已完成 HTTP／程序驗收；網頁操作、多模型獨立性及帳戶配額仍待查核，任務 14 保留 awaiting-validation。完整紀錄見 `docs/manual-acceptance.md`。
