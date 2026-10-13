@@ -32,6 +32,7 @@ export function mountPassenger(passengerId) {
   let destination;
   let view;
   let busy = false;
+  let runId;
   function syncPoints() {
     pickupText.textContent = pickup ? `上車點 ${pickup.map(n => n.toFixed(5)).join(", ")}` : "上車點 —";
     destinationText.textContent = destination ? `下車點 ${destination.map(n => n.toFixed(5)).join(", ")}` : "下車點 —";
@@ -64,7 +65,7 @@ export function mountPassenger(passengerId) {
     actionStatus.textContent = "送出中…";
     try {
       const request = await api(isRandom ? "/api/requests/random" : "/api/requests", {
-        method: "POST", body: { passenger_id: passengerId, client_request_id: crypto.randomUUID(), ...(isRandom ? {} : { pickup, destination, passenger_count: Number(count.value) }) },
+        method: "POST", body: { passenger_id: passengerId, run_id: runId, client_request_id: crypto.randomUUID(), ...(isRandom ? {} : { pickup, destination, passenger_count: Number(count.value) }) },
       });
       pickup = request.pickup; destination = request.destination;
       if (isRandom) count.value = request.passenger_count;
@@ -79,6 +80,7 @@ export function mountPassenger(passengerId) {
     const [snapshot, own] = await Promise.all([api("/api/simulation", { signal }), api(`/api/requests?passenger_id=${encodeURIComponent(passengerId)}`, { signal })]);
     // 同一輪次的資料才合併，避免重啟交錯顯示上一輪請求。
     if (snapshot.run_id !== own.run_id) throw new Error("輪次已變更");
-    return { settings: snapshot.settings, requests: own.requests };
-  }, data => renderRequests(data.requests), connection);
+    return { run_id: snapshot.run_id, settings: snapshot.settings, requests: own.requests };
+  }, data => { runId = data.run_id; renderRequests(data.requests); }, connection);
 }
+
