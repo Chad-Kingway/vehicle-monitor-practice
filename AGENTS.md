@@ -8,3 +8,11 @@
 - 不因一般 UI 調整、重構或提高覆蓋率擴寫測試；保留並執行既有有效測試，不為減少數量而刪除。
 - README、專案文件、註解及 Git commit message 使用繁體中文；程式識別字、第三方 API / SDK 名稱及既有專有名詞保留原始名稱。
 - 每次改動完成後建立 Git commit，並簡單說明人工測試方式。
+
+## Agent skills
+
+### Issue tracker
+需求與任務以本機 Markdown 管理；操作前讀取 `docs/agents/issue-tracker.md`。
+
+### Domain docs
+採 single-context；探索程式碼前讀取 `docs/agents/domain.md`。
