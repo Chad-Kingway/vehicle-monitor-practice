@@ -1,12 +1,16 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 from time import monotonic
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
+from dotenv import dotenv_values
+import httpx
 
-from .schemas import SimulationSettings, VehicleReport
+from .routes import RouteError, RoutePlanner
+from .schemas import RoadRoute, RouteQuery, SimulationSettings, VehicleReport
 
 
 DEFAULT_CONFIG = Path(__file__).resolve().parents[1] / "config" / "simulation.json"
@@ -31,9 +35,22 @@ def create_app(config_path: Path = DEFAULT_CONFIG) -> FastAPI:
             for vehicle in settings.vehicles
         }
         app.state.last_report_clock = {}
-        yield
+        env = {**dotenv_values(DEFAULT_CONFIG.parents[1] / ".env"), **os.environ}
+        async with httpx.AsyncClient(timeout=settings.route_timeout_seconds) as client:
+            app.state.route_planner = RoutePlanner(
+                client, (env.get("ROUTES_API_KEY") or "").strip(),
+                settings.route_timeout_seconds, settings.route_concurrency_limit,
+            )
+            yield
 
     app = FastAPI(title="車輛監控系統", lifespan=lifespan)
+
+    @app.post("/api/routes", response_model=RoadRoute)
+    async def query_route(query: RouteQuery):
+        try:
+            return await app.state.route_planner.plan(query)
+        except RouteError as error:
+            raise HTTPException(status_code=error.status_code, detail=str(error)) from None
 
     @app.get("/api/simulation")
     async def get_simulation():

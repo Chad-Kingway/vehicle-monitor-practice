@@ -27,6 +27,8 @@ class SimulationSettings(BaseModel):
     report_interval_seconds: PositiveSeconds
     poll_interval_seconds: PositiveSeconds
     offline_threshold_seconds: PositiveSeconds
+    route_timeout_seconds: PositiveSeconds = 10
+    route_concurrency_limit: int = Field(default=1, ge=1, le=20, strict=True)
     vehicles: tuple[VehicleConfig, ...] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -45,3 +47,19 @@ class VehicleReport(BaseModel):
     run_id: UUID
     position: Position
     heading: Heading
+
+
+class RouteQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    origin: Position
+    destination: Position
+
+
+class RoadRoute(BaseModel):
+    provider: str = "kingway-directions"
+    origin: Position
+    destination: Position
+    coordinates: list[Position] = Field(min_length=2)
+    distance_meters: float = Field(gt=0, allow_inf_nan=False)
+    duration_seconds: float = Field(gt=0, allow_inf_nan=False)

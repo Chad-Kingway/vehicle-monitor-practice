@@ -56,7 +56,41 @@ export async function createVehicleMap(vehicle, status) {
   try {
     model = await withTimeout(loading, 45000, "模型載入逾時，請檢查 glTF 與相依素材。");
   } catch (error) { expired = true; throw error; }
+  let routeLine;
+  const routeMarkers = [];
+  function clearRoute() {
+    if (routeLine) map.three.remove3dObject(routeLine);
+    routeLine = null;
+    for (const marker of routeMarkers) marker.remove();
+    routeMarkers.length = 0;
+    map.redraw();
+  }
   return {
+    clearRoute,
+    showRoute(route) {
+      clearRoute();
+      try {
+        routeLine = map.three.add3dLine({
+          id: "integration-route", coordinates: route.coordinates.map((point) => [...point, 0]),
+          color: "#2675eb", width: 6,
+        });
+        for (const [point, label, kind] of [[route.origin, "起", "origin"], [route.destination, "迄", "destination"]]) {
+          const icon = document.createElement("span");
+          icon.className = `route-marker route-marker-${kind}`;
+          icon.textContent = label;
+          routeMarkers.push(new MapThree.Marker({ position: [...point], icon, altitude: 0, title: `${label}點：${point.join(", ")}` }));
+        }
+        const points = [...route.coordinates, route.origin, route.destination];
+        const longitudes = points.map((point) => point[0]);
+        const latitudes = points.map((point) => point[1]);
+        map.setPitch(0);
+        map.fitBounds([
+          [Math.min(...longitudes), Math.min(...latitudes)],
+          [Math.max(...longitudes), Math.max(...latitudes)],
+        ], { padding: 60 });
+        map.redraw();
+      } catch (error) { clearRoute(); throw error; }
+    },
     update(current) {
       model.setCoordinates([...current.position, 0]);
       // 1.4.3 的世界座標 -X 為東、-Y 為北，校正後以 +Y 作車頭。

@@ -31,10 +31,22 @@ footer p { margin: 0; }
 .map-region { position: relative; min-width: 0; background: #dde4e8; color: #26384a; }
 #map { position: absolute; inset: 0; }
 .map-caption { position: absolute; z-index: 1; top: 20px; left: 20px; padding: 8px 13px; border: 1px solid #ffffffa0; border-radius: 7px; background: #fffffff0; box-shadow: 0 2px 12px #1a334510; font-size: 12px; pointer-events: none; }
+.route-check { border-top: 1px solid #304055; padding-top: 18px; }
+.route-check h2 { margin-bottom: 14px; }
+#route-form { display: grid; gap: 8px; font-size: 12px; }
+#route-form input { width: 100%; padding: 9px; border: 1px solid #43566f; border-radius: 5px; background: #18283c; color: inherit; font: inherit; }
+#route-submit { padding: 10px; margin-top: 4px; border: 0; border-radius: 5px; background: #2675eb; color: white; cursor: pointer; }
+#route-submit:disabled { opacity: .5; cursor: wait; }
+#route-status { color: #a8bfdb; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+#route-result dd { text-align: right; overflow-wrap: anywhere; }
+.route-marker { display: grid; place-items: center; width: 32px; height: 32px; border: 2px solid white; border-radius: 50%; color: white; font: bold 14px "Microsoft JhengHei", sans-serif; box-shadow: 0 2px 8px #0005; }
+.route-marker-origin { background: #147a58; }
+.route-marker-destination { background: #b04436; border-radius: 6px; }
 @media (max-width: 680px) {
   .monitor { grid-template-columns: 1fr; grid-template-rows: auto minmax(320px, 1fr); height: auto; min-height: 100dvh; }
   .panel { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .vehicle-card { grid-column: 1 / -1; }
+  .route-check { grid-column: 1 / -1; }
   .settings { grid-column: 2; grid-row: 1; align-self: center; }
   footer { grid-column: 1 / -1; }
   .map-region { min-height: 55dvh; }

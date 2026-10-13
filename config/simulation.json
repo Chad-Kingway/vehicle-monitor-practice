@@ -3,6 +3,8 @@
   "report_interval_seconds": 1,
   "poll_interval_seconds": 1,
   "offline_threshold_seconds": 10,
+  "route_timeout_seconds": 10,
+  "route_concurrency_limit": 1,
   "vehicles": [
     {
       "id": "vehicle-01",

@@ -1,5 +1,8 @@
 import "./style.css";
 import { createVehicleMap } from "./vehicle-map.js";
+import { mountRouteCheck } from "./route-check.js";
+
+const routeCheck = mountRouteCheck();
 
 const ui = Object.fromEntries([
   "connection", "vehicle-id", "vehicle-status", "longitude", "latitude", "heading", "capacity",
@@ -52,6 +55,7 @@ function render(snapshot) {
       mapView = view;
       view.update(latestVehicle);
       mapStatus("地圖與模型已就緒");
+      routeCheck?.attachMap(view);
     }).catch(mapError);
   }
 }
