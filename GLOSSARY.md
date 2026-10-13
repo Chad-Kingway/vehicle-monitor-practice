@@ -15,6 +15,12 @@ _Avoid_：乘車請求
 **載客上限（Passenger Capacity）**：
 一台車每次接送可搭載的最大乘客人數。
 
+**離線車輛（Offline Vehicle）**：
+目前失聯且不參與派車的車輛。
+
+**取消乘車請求（Request Cancellation）**：
+乘客主動結束仍在等待派車的乘車請求。已開始規劃路線的請求不接受取消。
+
 ## 接送階段
 
 **前往接人（Pickup Travel）**：
