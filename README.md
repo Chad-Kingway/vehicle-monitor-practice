@@ -1,6 +1,6 @@
 # 車輛監控系統
 
-目前提供一台車的本機連線、勤崴 3D 監控地圖，以及由 Server 查詢官方道路路線的整合驗收畫面（任務 01、02）。FastAPI Server 管理設定、模擬輪次與車輛狀態；Python 車輛 Client 透過 HTTP 回報位置與朝向；Vite 網頁透過 HTTP 顯示 Server 資料。關閉監控頁不會停止車輛 Client。
+本機 Client / Server 接送模擬：FastAPI 管理車隊、乘車請求、接送任務與官方道路規劃；獨立 Python 車隊程式沿路線行駛與回報；乘客頁提出請求；監控頁顯示勤崴 3D 地圖。關閉監控頁不會停止車輛 Client。
 
 ## 環境準備
 
@@ -38,10 +38,10 @@ Copy-Item .env.example .env
 2. 車輛 Client：
 
    ```powershell
-   .\.venv\Scripts\python.exe -m clients.vehicle --demo
+   .\.venv\Scripts\python.exe -m clients.vehicle
    ```
 
-   `--demo` 從初始位置沿邊長 300 公尺的診斷方形移動，供驗證位置與四個方向；這是連線展示用軌跡。任務 02 僅取得並顯示真實道路路線，車輛沿路線接送於任務 03 交付。基準速度為 5 公尺／秒，套用 Server 的倍率；回報頻率依真實時間計算。省略 `--demo` 則原地回報。以 `Ctrl+C` 停止。
+   預設啟動設定中的所有車輛，也可用 `--vehicle-id vehicle-01` 單獨啟動一台。各車保留獨立任務與進度，以官方預估時間及道路折線內插行駛，套用 Server 的速度倍率。回報頻率依真實時間計算，以 `Ctrl+C` 停止。`--demo` 僅供方形位置／朝向診斷，不用於接送驗收。
 
 3. 監控網頁：
 
@@ -53,11 +53,11 @@ Copy-Item .env.example .env
 
 ## 設定與 HTTP
 
-修改 `config/simulation.json` 後重啟 Server 與 Client。目前使用一筆車輛設定；三車車隊於任務 04 交付，監控列表與互動於任務 08 擴充。
+修改 `config/simulation.json` 後重啟 Server 與 Client。預設三台四人座車輛，各車識別碼、容量與固定初始位置可設定；監控頁可即時修改全車速度，其餘設定依下表重啟生效。
 
 | 設定 | 預設 |
 | --- | --- |
-| 車輛識別碼、載客上限 | `vehicle-01`、4 人 |
+| 車輛識別碼、載客上限 | `vehicle-01`～`vehicle-03`、各 4 人 |
 | 初始位置、朝向 | `[121.561, 25.0334]`、0° |
 | 行駛速度倍率 | 10 |
 | 車輛回報、網頁更新 | 各 1 秒 |
@@ -73,7 +73,7 @@ Copy-Item .env.example .env
 | `POST /api/vehicles/{vehicle_id}/reports` | 接收 `{ "run_id": "本輪 UUID", "position": [121.561, 25.0334], "heading": 90 }`，更新該車 |
 | `POST /api/routes` | 接收 `{ "origin": [121.561, 25.0334], "destination": [121.517, 25.0478] }`，非同步查詢勤崴 Direction REST |
 
-不同輪次回報回應 409，不存在的車輛回應 404，無效座標／朝向回應 422。最後回報時間由 Server 產生；離線判定使用單調時間，不受系統時鐘校正影響。Client 發現新輪次時重新取得初始狀態。此切片沒有乘車請求或接送任務。
+不同輪次回報回應 409，不存在的車輛回應 404，無效座標／朝向回應 422。最後回報時間由 Server 產生；離線判定使用單調時間，不受系統時鐘校正影響。Client 發現新輪次時重新取得初始狀態。
 
 Server 可用 `--config 路徑` 與 `--port 連接埠` 指定啟動設定；Client 可用 `--server HTTP_URL` 與 `--vehicle-id 識別碼` 指定來源。變更 Server 連接埠時也需同步 `.env` 的 `SERVER_URL`。所有應用程式資料通訊使用 HTTP；Vite 的開發 HMR 連線只用於程式碼更新。
 
@@ -82,11 +82,49 @@ Server 可用 `--config 路徑` 與 `--port 連接埠` 指定啟動設定；Clie
 1. 啟動三個程序，確認側欄出現「Server 已連線」「已連線」「地圖與模型已就緒」，勤崴地圖顯示本機車輛模型。
 2. 比對 Client 終端機、`GET /api/simulation` 與側欄的位置及朝向；等待東、北、西、南轉向，確認模型車頭隨回報更新。網頁讀取有一個更新週期的延遲。
 3. 關閉監控頁，保持 Server 與 Client 執行；從 Client 輸出或 API 確認位置仍改變。重新開啟網頁，確認載入 Server 當前位置而非重置車輛。
-4. 停止 Client 超過 10 秒，側欄顯示離線但保留最後位置。重新啟動 Client 後恢復連線。接送任務斷線規則留待任務 11。
+4. 停止 Client 超過 10 秒，側欄顯示離線並保留最後位置；執行中的原任務顯示進度待確認。同輪斷線驗收應只阻斷 HTTP 並保持 Client 存活，不能用 Server 重啟代替。
 5. 重啟 Server，確認 `run_id` 改變；舊輪次回報應回應 409，且不修改新輪資料。Client 接著讀取新輪並從初始位置回報。
 6. 執行 `npm run build`；需要驗證建置產物時，保持 Server 執行，執行 `npm run preview` 並開啟 `http://127.0.0.1:4173`（此來源亦需勤崴授權）。
 
-本專案尚無既有自動測試，依規格不新增測試檔。語法檢查可執行 `node --check src/main.js`、`node --check src/sdk.js`、`node --check src/vehicle-map.js`、`node --check vite.config.js` 與 `.\.venv\Scripts\python.exe -m compileall -q server clients`。
+本專案尚無既有自動測試，依規格不新增測試檔。語法檢查可執行 `node --check src/main.js`、`node --check src/sdk.js`、`node --check src/vehicle-map.js`、`node --check vite.config.js` 與 `.\.venv\Scripts\python.exe -m compileall -q server clients`。完整流程與實際驗收結果見 [第一版整合驗收](docs/manual-acceptance.md)。
+
+## 乘客、生成器與重新開始
+
+從監控頁的「新增乘客」入口開頁，每次代表不同乘客；重新整理保留該頁身分。依序點選上車點與下車點、輸入人數後送出，或一鍵隨機送出一筆。等待派車可取消，規劃路線開始後拒絕取消。
+
+Server 按送出順序掃描等待請求，選擇容量足夠、在線且空閒的最近車輛。暫不可服務的請求保留順位，後面可服務的請求仍可派車；超過車隊最大容量直接拒絕。規劃及執行期間每車僅一個任務。完成後停在下車點並從該處接下一筆。
+
+限量生成器另開終端機：
+
+```powershell
+.\.venv\Scripts\python.exe -m clients.passenger
+```
+
+預設每 5～15 真實秒生成一筆、最多 20 筆，每筆使用新的乘客身分。與網頁單筆隨機共用 Server 規則：台北市範圍、1～車隊最大容量、最短距離 200 公尺、最多抽樣 20 次，失敗不送單。生成器以 `Ctrl+C` 停止，網頁沒有持續生成開關。
+
+| 設定 | 生效方式 |
+| --- | --- |
+| `speed_multiplier` | 監控頁即時修改，不重置行駛進度 |
+| `vehicles`、回報／更新間隔、離線門檻 | 重啟 Server 與車隊 Client |
+| 路線逾時、嘗試次數、併發上限 | 重啟 Server |
+| `random_requests` 範圍、距離、抽樣上限 | 重啟 Server |
+| `generator` 間隔與總數 | 重啟生成器；生成器直接讀取指定設定檔 |
+
+只重啟生成器不清空 Server。重新開始整場模擬時，以 `Ctrl+C` 停止生成器、車隊 Client 與 Server，修改設定後依啟動順序重開三者。Server 使用記憶體，新輪清空所有請求／任務並回到各車初始位置；舊輪次回報不得更新新資料。
+
+同輪失聯時，未載客車暫停接人，已載客車沿快取路線送達後等待；Server 保留原任務，不失敗或轉派。恢復後先核對原任務與進度，送達結果確認後才能接新單，上一筆重複完成不影響新任務。永久失聯保持待確認，由操作者重新開始整場模擬。網頁保留最後資料並標示中斷；生成器斷線暫停，恢復後繼續剩餘筆數且不補發。
+
+| HTTP | 行為 |
+| --- | --- |
+| `POST /api/requests` | `{passenger_id, pickup, destination, passenger_count, client_request_id?}` 提出請求 |
+| `POST /api/requests/random` | `{passenger_id, client_request_id?}` 共用規則生成並提出一筆 |
+| `GET /api/requests?passenger_id=...` | 讀取指定乘客的請求 |
+| `POST /api/requests/{id}/cancel` | `{passenger_id}` 取消等待請求 |
+| `GET /api/vehicles/{id}/task` | 取得有效任務、輪次與設定 |
+| `POST /api/vehicles/{id}/reports` | 位置、朝向及 `{run_id, task_id, phase, progress}` 核對進度／完成 |
+| `PUT /api/simulation/speed` | `{speed_multiplier}` 修改速度 |
+
+`client_request_id` 用於同輪不確定送單結果的重試，避免重複產生請求。此免登入識別僅供本機模擬。
 
 ## 道路路線整合驗收
 
@@ -109,3 +147,4 @@ Server 可用 `--config 路徑` 與 `--port 連接埠` 指定啟動設定；Clie
 - [Encoded Polyline](https://developers.google.com/maps/documentation/utilities/polylinealgorithm)：E5 演算法與官方三點範例；已核對解碼結果及真實 REST steps。
 - [add3dLine](https://kw3dmap.localking.com.tw/3dmap/api/mapThree/methods#add3dline)、[Marker](https://kw3dmap.localking.com.tw/3dmap/api/marker/info)、[fitBounds](https://kw3dmap.localking.com.tw/3dmap/api/map/methods#fitbounds)：顯示 Server 道路線形、不同起訖標記並定位。
 - [Vite HTTP 代理](https://vite.dev/config/server-options#server-proxy)、[FastAPI workers](https://fastapi.tiangolo.com/deployment/server-workers/)。
+
