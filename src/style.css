@@ -51,3 +51,38 @@ footer p { margin: 0; }
   footer { grid-column: 1 / -1; }
   .map-region { min-height: 55dvh; }
 }
+/* 車隊與乘客操作 */
+.monitor { grid-template-columns: 350px minmax(0, 1fr); }
+.panel { gap: 20px; padding: 24px; }
+button, input { font: inherit; }
+button, .button-link { border: 1px solid #43566f; border-radius: 6px; background: #253e58; color: #e9f0f8; cursor: pointer; padding: 9px 12px; font-size: 12px; }
+button:hover, .button-link:hover { background: #325271; }
+button:disabled { opacity: .5; cursor: default; }
+.button-link { display: inline-block; text-decoration: none; margin-top: 12px; }
+input[type="number"] { width: 100%; min-width: 0; background: #18283c; color: inherit; border: 1px solid #43566f; border-radius: 6px; padding: 9px; }
+input[type="checkbox"] { accent-color: #6dd6b0; }
+.list-section h2 { margin-bottom: 12px; }
+.record-list { display: grid; gap: 8px; max-height: 360px; overflow: auto; }
+.record-card { border: 1px solid #304055; border-radius: 8px; background: #18283c; padding: 12px; font-size: 12px; overflow-wrap: anywhere; }
+.record-card .card-heading { margin: 0 0 9px; }
+.record-card p { margin: 7px 0; font-size: 11px; color: #a8bfdb; }
+.record-card button { margin-top: 5px; }
+.fleet-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left; background: #18283c; }
+.fleet-item.selected { border-color: #6dd6b0; background: #1c393f; }
+.fleet-item span { font-size: 11px; color: #b6c8d7; }
+.actions { display: flex; align-items: center; gap: 16px; margin: 8px 0 12px; }
+.check-label { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+.speed-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.speed-form p { grid-column: 1 / -1; margin: 0; font-size: 12px; color: #a8bfdb; }
+.passenger-form { display: grid; gap: 12px; padding: 16px; border: 1px solid #304055; border-radius: 12px; background: #18283c; }
+.passenger-form p, .passenger-form label { font-size: 12px; margin: 0; }
+.passenger-form p { overflow-wrap: anywhere; color: #a8bfdb; }
+.passenger-form button[type="submit"] { background: #147a58; }
+.identity, .empty { color: #91a4ba; font-size: 12px; }
+.error-text { color: #f0b394 !important; }
+@media (max-width: 680px) {
+  .monitor { grid-template-columns: 1fr; }
+  .panel { display: flex; padding: 20px; }
+  .map-region { min-height: 55dvh; }
+  .record-list { max-height: 220px; }
+}
