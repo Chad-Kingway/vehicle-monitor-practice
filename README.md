@@ -134,9 +134,9 @@ Server 按送出順序掃描等待請求，選擇容量足夠、在線且空閒�
 4. 更換一組起訖或對調方向再查詢，確認舊線與標記被清除、只顯示新結果。輸入錯誤座標後查詢，應顯示錯誤，且不保留前次成功線形或數值。
 5. 暫時將 `ROUTES_API_KEY` 設為空白／無效值，重啟 Server 再查詢，應顯示缺少憑證／授權遭拒。實測無效 Key 的官方回應為 `HTTP 401 / REQUEST_DENIED`，Server 回應 503；憑證缺漏也回應 503。恢復憑證並重啟後可再查詢。勿將憑證或含 Key 的上游 URL 寫入文件。
 
-`POST /api/routes` 回傳 `provider`、請求 `origin`／`destination`、完整 `coordinates`（均為 `[經度, 緯度]`）、`distance_meters` 與 `duration_seconds`。Server 將請求轉為官方 REST 的 `Origin`／`Destination`（`緯度,經度`），解碼每個 `steps[].polyline.points`（E5），核對 step 起訖與連續性，再加總 leg 的數值距離／時間；不用 overview 簡化線或文字推算。缺失／不連續道路資料回應 502，不產生替代路線；輸入無效回應 422，逾時回應 504，網路／上游異常回應 502，HTTP 授權或頻率拒絕回應 503。此切片每次僅查詢一次；接送失敗後釋放車輛與重試策略留待任務 10。
+`POST /api/routes` 回傳 `provider`、請求 `origin`／`destination`、完整 `coordinates`（均為 `[經度, 緯度]`）、`distance_meters` 與 `duration_seconds`。Server 將請求轉為官方 REST 的 `Origin`／`Destination`（`緯度,經度`），解碼每個 `steps[].polyline.points`（E5），核對 step 起訖與連續性，再加總 leg 的數值距離／時間；不用 overview 簡化線或文字推算。缺失／不連續道路資料回應 502，不產生替代路線；輸入無效回應 422，逾時回應 504，網路／上游異常回應 502，HTTP 授權或頻率拒絕回應 503。暫時性逾時、網路或上游錯誤依 route_max_attempts 重試，預設最多三次；每次 route_timeout_seconds 預設 10 秒，包含等待併發空位。無可行路線或重試耗盡會保留失敗原因並釋放保留車輛。同點路段以零距離／零時間直接完成，不造替代道路。
 
-官方公開 [Starter 方案](https://kwmapdeveloper.localking.com.tw/products) 列出每日 100 次且須管理員核准；登入後才能查閱自己的訂閱。目前本機 Key 的實際方案、每日配額與頻率上限未取得證據，使用者表示目前可能不限次，因此不以公開 Starter 配額當成本機限制，也不宣稱已確認無限使用。已查核 [服務條款](https://kwmapdeveloper.localking.com.tw/maps-service-terms) 的座標暫存期限為 30 天；目前 Server 查詢後直接回傳，未保存第三方路線。人工查核暫存限置於 Git 忽略的 `.local`，驗證後移除。
+官方公開 [Starter 方案](https://kwmapdeveloper.localking.com.tw/products) 列出每日 100 次且須管理員核准；登入後才能查閱自己的訂閱。目前本機 Key 的實際方案、每日配額與頻率上限未取得證據，使用者表示目前可能不限次，因此不以公開 Starter 配額當成本機限制，也不宣稱已確認無限使用。已查核 [服務條款](https://kwmapdeveloper.localking.com.tw/maps-service-terms) 的座標暫存期限為 30 天；目前 Server 僅於本輪記憶體任務中保留道路路線，重啟即清空；長時間展示仍應在 30 天內重新開始。人工查核暫存限置於 Git 忽略的 `.local`，驗證後移除。
 
 ## 官方介面依據
 
@@ -147,4 +147,5 @@ Server 按送出順序掃描等待請求，選擇容量足夠、在線且空閒�
 - [Encoded Polyline](https://developers.google.com/maps/documentation/utilities/polylinealgorithm)：E5 演算法與官方三點範例；已核對解碼結果及真實 REST steps。
 - [add3dLine](https://kw3dmap.localking.com.tw/3dmap/api/mapThree/methods#add3dline)、[Marker](https://kw3dmap.localking.com.tw/3dmap/api/marker/info)、[fitBounds](https://kw3dmap.localking.com.tw/3dmap/api/map/methods#fitbounds)：顯示 Server 道路線形、不同起訖標記並定位。
 - [Vite HTTP 代理](https://vite.dev/config/server-options#server-proxy)、[FastAPI workers](https://fastapi.tiangolo.com/deployment/server-workers/)。
+
 
