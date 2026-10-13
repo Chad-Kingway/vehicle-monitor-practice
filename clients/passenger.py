@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+import math
 from pathlib import Path
 import random
 from uuid import uuid4
@@ -16,8 +17,9 @@ async def run(server_url, config_path=DEFAULT_CONFIG, total=None, interval_min=N
     total = settings["total_requests"] if total is None else total
     interval_min = settings["interval_min_seconds"] if interval_min is None else interval_min
     interval_max = settings["interval_max_seconds"] if interval_max is None else interval_max
-    if total < 0 or interval_min <= 0 or interval_max < interval_min:
-        raise ValueError("總數必須非負，間隔須大於零且上限不得小於下限。")
+    valid_intervals = all(isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) for value in (interval_min, interval_max))
+    if type(total) is not int or total < 0 or not valid_intervals or interval_min <= 0 or interval_max < interval_min:
+        raise ValueError("總數必須為非負整數，間隔須為有限正數且上限不得小於下限。")
     run_id = None
     completed = 0
     pending = None
