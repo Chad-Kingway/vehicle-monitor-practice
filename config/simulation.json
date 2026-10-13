@@ -9,8 +9,44 @@
     {
       "id": "vehicle-01",
       "passenger_capacity": 4,
-      "initial_position": [121.561, 25.0334],
+      "initial_position": [
+        121.561,
+        25.0334
+      ],
+      "initial_heading": 0
+    },
+    {
+      "id": "vehicle-02",
+      "passenger_capacity": 4,
+      "initial_position": [
+        121.5445,
+        25.0415
+      ],
+      "initial_heading": 0
+    },
+    {
+      "id": "vehicle-03",
+      "passenger_capacity": 4,
+      "initial_position": [
+        121.5235,
+        25.046
+      ],
       "initial_heading": 0
     }
-  ]
+  ],
+  "route_max_attempts": 3,
+  "route_retry_delay_seconds": 0.5,
+  "random_requests": {
+    "longitude_min": 121.5102,
+    "longitude_max": 121.5693,
+    "latitude_min": 25.03068,
+    "latitude_max": 25.06026,
+    "minimum_distance_meters": 200,
+    "max_attempts": 20
+  },
+  "generator": {
+    "interval_min_seconds": 5,
+    "interval_max_seconds": 15,
+    "total_requests": 20
+  }
 }
