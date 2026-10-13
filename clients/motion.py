@@ -29,7 +29,7 @@ class RouteMotion:
 
     @property
     def progress(self):
-        return min(1.0, self.elapsed / self.duration)
+        return min(1.0, self.elapsed / self.duration) if self.duration > 0 else 1.0
 
     def advance(self, seconds, multiplier):
         self.elapsed = min(self.duration, self.elapsed + max(0, seconds) * multiplier)
