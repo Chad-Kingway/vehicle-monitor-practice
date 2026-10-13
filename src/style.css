@@ -1,0 +1,41 @@
+:root {
+  font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+  color: #e9f0f8;
+  background: #0f1d2e;
+  font-synthesis: none;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+.monitor { display: grid; grid-template-columns: 310px minmax(0, 1fr); height: 100dvh; }
+.panel { padding: 30px 24px 20px; overflow: auto; display: flex; flex-direction: column; gap: 24px; }
+.eyebrow { color: #7d9ab6; font-size: 10px; letter-spacing: .18em; font-weight: 600; }
+h1 { font-size: 25px; letter-spacing: .04em; margin: 10px 0 14px; font-weight: 600; }
+.connection { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12px; color: #92a9bd; }
+.connection::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #8293a6; }
+.connection[data-state="online"]::before { background: #6dd6b0; box-shadow: 0 0 0 4px #6dd6b016; }
+.connection[data-state="offline"]::before { background: #f0a879; }
+.vehicle-card { border: 1px solid #304055; border-radius: 12px; padding: 18px 16px 8px; background: #18283c; }
+.card-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 20px; }
+h2 { font-size: 15px; margin: 0; font-weight: 600; }
+.badge { font-size: 11px; padding: 4px 8px; border-radius: 5px; color: #b1bdcd; background: #25364a; white-space: nowrap; }
+.badge[data-state="online"] { color: #7ddaba; background: #1e403f; }
+dl { margin: 0; font-size: 12px; }
+dl > div { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+dt { color: #91a4ba; }
+dd { margin: 0; font-variant-numeric: tabular-nums; }
+.settings { padding: 0 4px; color: #bfcedd; }
+footer { margin-top: auto; border-top: 1px solid #2a394d; padding-top: 14px; font-size: 12px; color: #849ab0; line-height: 1.7; }
+footer p { margin: 0; }
+#map-error { color: #f0b394; margin-top: 8px; overflow-wrap: anywhere; }
+.map-region { position: relative; min-width: 0; background: #dde4e8; color: #26384a; }
+#map { position: absolute; inset: 0; }
+.map-caption { position: absolute; z-index: 1; top: 20px; left: 20px; padding: 8px 13px; border: 1px solid #ffffffa0; border-radius: 7px; background: #fffffff0; box-shadow: 0 2px 12px #1a334510; font-size: 12px; pointer-events: none; }
+@media (max-width: 680px) {
+  .monitor { grid-template-columns: 1fr; grid-template-rows: auto minmax(320px, 1fr); height: auto; min-height: 100dvh; }
+  .panel { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .vehicle-card { grid-column: 1 / -1; }
+  .settings { grid-column: 2; grid-row: 1; align-self: center; }
+  footer { grid-column: 1 / -1; }
+  .map-region { min-height: 55dvh; }
+}

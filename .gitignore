@@ -1,2 +1,13 @@
 # 本機車輛模型不納入版本控制
 /public/models/
+
+# 本機環境、相依套件與產物
+.env
+.env.*
+!.env.example
+/.venv/
+/node_modules/
+/dist/
+/.local/
+__pycache__/
+*.pyc

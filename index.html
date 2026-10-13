@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>車輛監控</title>
+  </head>
+  <body>
+    <main class="monitor">
+      <aside class="panel" aria-label="車輛監控資料">
+        <header>
+          <span class="eyebrow">VEHICLE MONITOR</span>
+          <h1>車輛監控</h1>
+          <p id="connection" class="connection" role="status">連線中…</p>
+        </header>
+        <section class="vehicle-card" aria-labelledby="vehicle-id">
+          <div class="card-heading">
+            <h2 id="vehicle-id">車輛</h2>
+            <span id="vehicle-status" class="badge">尚未回報</span>
+          </div>
+          <dl>
+            <div><dt>經度</dt><dd id="longitude">—</dd></div>
+            <div><dt>緯度</dt><dd id="latitude">—</dd></div>
+            <div><dt>朝向</dt><dd id="heading">—</dd></div>
+            <div><dt>載客上限</dt><dd id="capacity">—</dd></div>
+            <div><dt>最後回報</dt><dd id="last-report">—</dd></div>
+          </dl>
+        </section>
+        <dl class="settings">
+          <div><dt>速度倍率</dt><dd id="speed">—</dd></div>
+          <div><dt>車輛回報</dt><dd id="report-interval">—</dd></div>
+          <div><dt>網頁更新</dt><dd id="poll-interval">—</dd></div>
+          <div><dt>模擬輪次</dt><dd id="run-id">—</dd></div>
+        </dl>
+        <footer>
+          <p id="map-status" role="status">等待 Server 資料</p>
+          <p id="map-error" role="alert" hidden></p>
+        </footer>
+      </aside>
+      <section class="map-region" aria-label="勤崴監控地圖">
+        <div id="map" aria-label="車輛位置與朝向"></div>
+        <span class="map-caption">勤崴地圖 · 3D 車輛</span>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

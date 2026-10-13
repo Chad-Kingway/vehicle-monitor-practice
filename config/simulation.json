@@ -1,0 +1,14 @@
+{
+  "speed_multiplier": 10,
+  "report_interval_seconds": 1,
+  "poll_interval_seconds": 1,
+  "offline_threshold_seconds": 10,
+  "vehicles": [
+    {
+      "id": "vehicle-01",
+      "passenger_capacity": 4,
+      "initial_position": [121.561, 25.0334],
+      "initial_heading": 0
+    }
+  ]
+}
