@@ -45,6 +45,21 @@ class Simulation:
     def snapshot(self):
         return {'run_id': self.run_id, 'settings': self.settings, 'vehicles': [self.vehicle_view(item) for item in self.vehicles.values()], 'requests': [self.request_view(item) for item in self.requests.values()], 'tasks': [self.task_view(item) for item in self.tasks.values()]}
 
+    def passenger_requests(self, passenger_id):
+        return {'run_id': self.run_id, 'requests': [self.request_view(item) for item in self.requests.values() if item['passenger_id'] == passenger_id]}
+
+    def vehicle_command(self, vehicle_id):
+        vehicle = self.vehicles.get(vehicle_id)
+        if vehicle is None:
+            raise HTTPException(404, '車輛不存在。')
+        task = self.tasks.get(vehicle['task_id'])
+        return {'run_id': self.run_id, 'settings': self.settings, 'task': self.task_view(task) if task and task['status'] != 'planning' else None}
+
+    async def set_speed(self, multiplier):
+        async with self.lock:
+            self.settings = self.settings.model_copy(update={'speed_multiplier': multiplier})
+            return {'run_id': self.run_id, 'settings': self.settings}
+
     def dispatch(self):
         # 呼叫者持有同一把鎖，取消與保留車輛只有一種成功結果。
         for request in self.requests.values():
@@ -78,16 +93,20 @@ class Simulation:
                     vehicle['task_id'] = None
                 self.dispatch()
 
-    async def submit(self, data):
-        async with self.lock:
-            return self.submit_locked(data)
-
-    def submit_locked(self, data):
+    def submission_identity(self, data):
         if data.run_id is not None and data.run_id != self.run_id:
             raise HTTPException(409, '模擬輪次已變更，請重新取得 Server 資料。')
         key = (data.passenger_id, data.client_request_id) if data.client_request_id else None
-        if key and key in self.idempotency:
-            return self.request_view(self.requests[self.idempotency[key]])
+        existing_id = self.idempotency.get(key) if key else None
+        existing = self.request_view(self.requests[existing_id]) if existing_id else None
+        return key, existing
+
+    async def submit(self, data):
+        async with self.lock:
+            key, existing = self.submission_identity(data)
+            return existing if existing is not None else self.create_request_locked(data, key)
+
+    def create_request_locked(self, data, key):
         if data.passenger_count > max(item['passenger_capacity'] for item in self.vehicles.values()):
             raise HTTPException(422, '乘車人數超過車隊最大載客上限。')
         request = {**data.model_dump(), 'id': str(uuid4()), 'sequence': len(self.requests) + 1, 'status': 'waiting', 'task_id': None, 'vehicle_id': None, 'failure_reason': None, 'created_at': datetime.now(timezone.utc)}
@@ -100,17 +119,15 @@ class Simulation:
 
     async def submit_random(self, data):
         async with self.lock:
-            if data.run_id is not None and data.run_id != self.run_id:
-                raise HTTPException(409, '模擬輪次已變更，請重新取得 Server 資料。')
-            key = (data.passenger_id, data.client_request_id) if data.client_request_id else None
-            if key and key in self.idempotency:
-                return self.request_view(self.requests[self.idempotency[key]])
+            key, existing = self.submission_identity(data)
+            if existing is not None:
+                return existing
             bounds = self.settings.random_requests
             for _ in range(bounds.max_attempts):
                 pickup = (random.uniform(bounds.longitude_min, bounds.longitude_max), random.uniform(bounds.latitude_min, bounds.latitude_max))
                 destination = (random.uniform(bounds.longitude_min, bounds.longitude_max), random.uniform(bounds.latitude_min, bounds.latitude_max))
                 if distance_meters(pickup, destination) >= bounds.minimum_distance_meters:
-                    return self.submit_locked(RideRequestInput(**data.model_dump(), pickup=pickup, destination=destination, passenger_count=random.randint(1, max(item['passenger_capacity'] for item in self.vehicles.values()))))
+                    return self.create_request_locked(RideRequestInput(**data.model_dump(), pickup=pickup, destination=destination, passenger_count=random.randint(1, max(item['passenger_capacity'] for item in self.vehicles.values()))), key)
             raise HTTPException(422, '隨機起訖抽樣已達上限，未提出乘車請求。')
 
     async def cancel(self, request_id, passenger_id):

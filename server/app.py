@@ -52,15 +52,11 @@ def create_app(config_path: Path = DEFAULT_CONFIG, *, route_transport=None) -> F
 
     @app.put('/api/simulation/speed')
     async def set_speed(data: SpeedInput):
-        simulation = app.state.simulation
-        async with simulation.lock:
-            simulation.settings = simulation.settings.model_copy(update={'speed_multiplier': data.speed_multiplier})
-            return {'run_id': simulation.run_id, 'settings': simulation.settings}
+        return await app.state.simulation.set_speed(data.speed_multiplier)
 
     @app.get('/api/requests')
     async def get_requests(passenger_id: str):
-        simulation = app.state.simulation
-        return {'run_id': simulation.run_id, 'requests': [simulation.request_view(item) for item in simulation.requests.values() if item['passenger_id'] == passenger_id]}
+        return app.state.simulation.passenger_requests(passenger_id)
 
     @app.post('/api/requests/{request_id}/cancel')
     async def cancel_request(request_id: str, data: PassengerInput):
@@ -68,12 +64,7 @@ def create_app(config_path: Path = DEFAULT_CONFIG, *, route_transport=None) -> F
 
     @app.get('/api/vehicles/{vehicle_id}/task')
     async def get_task(vehicle_id: str):
-        simulation = app.state.simulation
-        vehicle = simulation.vehicles.get(vehicle_id)
-        if vehicle is None:
-            raise HTTPException(404, '車輛不存在。')
-        task = simulation.tasks.get(vehicle['task_id'])
-        return {'run_id': simulation.run_id, 'settings': simulation.settings, 'task': simulation.task_view(task) if task and task['status'] != 'planning' else None}
+        return app.state.simulation.vehicle_command(vehicle_id)
 
     @app.post('/api/vehicles/{vehicle_id}/reports')
     async def report_vehicle(vehicle_id: str, report: VehicleReport):
