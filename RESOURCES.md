@@ -20,6 +20,18 @@
   說明物件、attribute 與 method 的關係。用於讀懂 Simulation 的 `self` 和 `snapshot()`。
 - [Python 官方教學：定義函式](https://docs.python.org/3/tutorial/controlflow.html#defining-functions)
   說明 Python 函式的 `def`、參數與回傳概念。用於學習 Server 函式的基本語法。
+- [Python 3.12: `contextlib.asynccontextmanager`](https://docs.python.org/3.12/library/contextlib.html#contextlib.asynccontextmanager)
+  說明如何把 async generator 包成非同步 context manager，搭配 `yield` 控制建立與清理資源。
+- [Python 3.12: Dictionary displays](https://docs.python.org/3.12/reference/expressions.html#dictionary-displays)
+  說明字典中的 `**mapping` 如何展開鍵值，以及重複鍵由較後方的值覆蓋。
+- [Python 3.12: Coroutines and Tasks](https://docs.python.org/3.12/library/asyncio-task.html#coroutines)
+  說明呼叫 `async def` 函式會建立 coroutine，以及 `await` 如何執行並取得結果。用於讀懂 `app.py` 對 `Simulation.submit()` 的呼叫。
+- [FastAPI: Request Body](https://fastapi.tiangolo.com/tutorial/body/)
+  說明以 Pydantic model 型別作為 API 參數時，FastAPI 如何解析與驗證 JSON request body。
+- [FastAPI: Body Fields](https://fastapi.tiangolo.com/tutorial/body-fields/)
+  說明如何用 Pydantic `Field` 加上欄位驗證條件與 metadata。
+- [FastAPI: Concurrency and async / await](https://fastapi.tiangolo.com/async/)
+  說明 FastAPI 路由與 async 函式如何配合。用於理解 API handler 如何等待非同步服務方法。
 
 ## Wisdom (Communities)
 
@@ -28,11 +40,3 @@
 ## Gaps
 
 - 課程尚未涵蓋瀏覽器開發者工具的實作練習；等讀到 HTTP 資料流時再補充最合適的官方文件。
-- [Python 3.12: `contextlib.asynccontextmanager`](https://docs.python.org/3.12/library/contextlib.html#contextlib.asynccontextmanager)
-  說明如何把 async generator 包成非同步 context manager，搭配 `yield` 控制建立與清理資源。
-- [Python 3.12: Dictionary displays](https://docs.python.org/3.12/reference/expressions.html#dictionary-displays)
-  說明字典中的 `**mapping` 如何展開鍵值，以及重複鍵由較後方的值覆蓋。
-- [FastAPI: Request Body](https://fastapi.tiangolo.com/tutorial/body/)
-  說明以 Pydantic model 型別作為 API 參數時，FastAPI 如何解析與驗證 JSON request body。
-- [FastAPI: Body Fields](https://fastapi.tiangolo.com/tutorial/body-fields/)
-  說明如何用 Pydantic `Field` 加上欄位驗證條件與 metadata。

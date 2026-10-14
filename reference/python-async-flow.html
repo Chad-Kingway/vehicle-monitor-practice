@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：非同步路由呼叫流程</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>非同步路由呼叫流程</h1><article>
+<h2>本專案的乘車請求</h2>
+<pre><code>async def submit_request(data: RideRequestInput):
+    return await app.state.simulation.submit(data)</code></pre>
+<ol><li>FastAPI 驗證 JSON，建立 <code>RideRequestInput</code>。</li><li>路由將 model 物件傳進 <code>Simulation.submit(data)</code>。</li><li><code>await</code> 等待非同步方法完成，取得它的回傳值。</li><li>路由回傳該值，FastAPI 將它作為 HTTP response。</li></ol>
+<p>直接呼叫 <code>async def</code> 函式會得到 coroutine 物件；必須 <code>await</code> 才會執行並取得結果。</p>
+<p><a href="../lessons/0010-await-simulation-submit.html">第 10 課：await 如何把請求交給 Simulation？</a> · <a href="../server/app.py">app.py</a> · <a href="../server/simulation.py">simulation.py</a></p>
+</article></main></body></html>

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 10 課：await 如何把請求交給 Simulation？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 10</div><h1><code>await</code> 如何把請求交給 Simulation？</h1><p class="subtitle">從已驗證的資料追到路由回傳結果。</p></header>
+<article>
+<h2>從 handler 接上 Simulation</h2>
+<p><a href="../server/app.py"><code>server/app.py</code></a> 的路由是：</p>
+<pre><code>@app.post('/api/requests')
+async def submit_request(data: RideRequestInput):
+    return await app.state.simulation.submit(data)</code></pre>
+<p>FastAPI 已先把 JSON 驗證成 <code>RideRequestInput</code>，再把這個物件放進 <code>data</code>。路由把同一個物件傳給 <a href="../server/simulation.py"><code>Simulation.submit(data)</code></a>。</p>
+
+<h2><code>await</code> 讓程式等到非同步方法完成</h2>
+<p><code>submit</code> 是用 <code>async def</code> 定義的方法。呼叫它會得到一個尚未完成的 coroutine；加上 <code>await</code> 後，非同步方法才會執行。方法完成時，路由取得它回傳的乘車請求資料，再把結果交回 FastAPI 作為 HTTP response。</p>
+<div class="callout"><strong>讀這行的順序：</strong><code>data</code> 傳入 <code>Simulation.submit</code> → <code>await</code> 等待處理完成 → <code>return</code> 把處理結果交回 FastAPI。</div>
+<p>如果只寫 <code>return app.state.simulation.submit(data)</code>，回傳的會是 coroutine 物件，而不是已處理好的請求資料。Python 官方文件也說，單純呼叫 coroutine function 不會讓 coroutine 執行；必須等待它，或用 task 排程。</p>
+<p>下一步可看 <code>submit</code> 裡的 <code>async with self.lock</code>：它讓共享模擬狀態的檢查與修改不會被並行請求交錯。</p>
+
+<section class="exercise"><h2>小練習</h2><p>在 <code>return await app.state.simulation.submit(data)</code> 這行，哪個部分是被等待的非同步方法？<code>await</code> 完成後，路由要回傳什麼？</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://docs.python.org/3.12/library/asyncio-task.html#coroutines">Python 官方：Coroutines and Tasks</a> — 看呼叫 coroutine 與使用 <code>await</code> 的差別。</p><p>框架脈絡：<a href="https://fastapi.tiangolo.com/async/">FastAPI 官方：Concurrency and async / await</a>。速查：<a href="../reference/python-async-flow.html">非同步路由呼叫流程</a>。</p>
+</article><footer><a href="0009-fastapi-request-validation.html">回顧第 9 課：FastAPI 如何驗證收到的資料？</a> · 可以接著問這一行或 <code>Simulation.submit()</code> 裡任何看不懂的部分。</footer>
+</main></body></html>

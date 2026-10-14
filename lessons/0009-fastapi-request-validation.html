@@ -30,5 +30,5 @@ async def submit_request(data: RideRequestInput):
 <section class="exercise"><h2>小練習</h2><p>如果乘車請求少了 <code>passenger_count</code>，或把人數傳成 <code>0</code>，程式會進入 <code>submit_request</code> 嗎？簡單說明原因。</p><p>提示：檢查欄位有沒有預設值，以及 <code>Field(ge=1)</code> 的意思。</p></section>
 
 <h2>延伸閱讀</h2><p>首選：<a href="https://fastapi.tiangolo.com/tutorial/body/">FastAPI 官方：Request Body</a> — 看參數宣告 Pydantic model 時，FastAPI 如何把 JSON body 解析成 model。</p><p>欄位限制：<a href="https://fastapi.tiangolo.com/tutorial/body-fields/">FastAPI 官方：Body Fields</a>。速查：<a href="../reference/python-request-schema.html">乘車請求輸入模型</a>。</p>
-</article><footer>下一步可以追模型驗證通過後，<code>Simulation.submit()</code> 如何改變伺服器狀態。</footer>
+</article><footer>下一步：<a href="0010-await-simulation-submit.html">追蹤 await 如何把通過驗證的資料交給 Simulation</a>。</footer>
 </main></body></html>

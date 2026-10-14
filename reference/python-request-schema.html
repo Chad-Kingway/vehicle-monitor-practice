@@ -7,5 +7,5 @@
 <h2>RideRequestInput 規則</h2>
 <ul><li>必填：<code>passenger_id</code>、<code>pickup</code>、<code>destination</code>、<code>passenger_count</code>。</li><li><code>passenger_count</code>：嚴格整數，且 <code>&gt;= 1</code>。</li><li><code>pickup</code>、<code>destination</code>：<code>[經度, 緯度]</code>；經度介於 -180 到 180，緯度介於 -90 到 90。</li><li><code>extra='forbid'</code>：拒絕未宣告的額外欄位。</li></ul>
 <h2>驗證成功後</h2><p>FastAPI 才會呼叫 handler，並將已驗證的 <code>RideRequestInput</code> 物件交給 <code>Simulation.submit(data)</code>。</p>
-<p><a href="../lessons/0009-fastapi-request-validation.html">第 9 課：FastAPI 如何驗證收到的資料？</a> · <a href="../server/schemas.py">查看完整 schemas.py</a></p>
+<p><a href="../lessons/0009-fastapi-request-validation.html">第 9 課：FastAPI 如何驗證收到的資料？</a> · <a href="../lessons/0010-await-simulation-submit.html">第 10 課：驗證後如何進入 Simulation？</a> · <a href="../server/schemas.py">查看完整 schemas.py</a></p>
 </article></main></body></html>
