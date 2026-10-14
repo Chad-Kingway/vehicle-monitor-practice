@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：lifespan 與字典展開</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>lifespan 與字典展開</h1><article>
+<h2><code>@asynccontextmanager</code></h2>
+<p>它是 Python <code>contextlib</code> 的 decorator，會把含有單次 <code>yield</code> 的 async generator 包成 async context manager。框架進入生命週期時，程式跑到 <code>yield</code> 前；框架完成服務、退出生命週期時，再執行 <code>yield</code> 後的清理。</p>
+<pre><code>@asynccontextmanager
+async def lifespan(app):
+    resource = await open_resource()
+    try:
+        yield  # 暫停，讓 app 開始工作
+    finally:
+        await resource.close()  # app 結束時清理</code></pre>
+<p>本專案以 <code>FastAPI(lifespan=lifespan)</code> 註冊它，在 <code>yield</code> 前建立 HTTP client、RoutePlanner 和 Simulation，結束時關閉資源。</p>
+<p>官方說明：<a href="https://docs.python.org/3.12/library/contextlib.html#contextlib.asynccontextmanager">Python contextlib.asynccontextmanager</a>、<a href="https://fastapi.tiangolo.com/advanced/events/">FastAPI Lifespan Events</a>。</p>
+
+<h2>字典裡的 <code>**mapping</code></h2>
+<p>在字典大括號內，<code>**</code> 會把 mapping 裡所有 key/value 加入新字典。項目由左到右加入；同一個 key 重複時，右邊最後出現的值會留下。</p>
+<pre><code>dotenv_values = {"MODE": "file", "PORT": "8000"}
+os_environment = {"MODE": "system"}
+
+settings = {
+    **dotenv_values,
+    **os_environment,
+}
+# 結果：{"MODE": "system", "PORT": "8000"}</code></pre>
+<p>因此本專案的 <code>{**dotenv_values(...), **os.environ}</code> 會先讀 `.env`，再合併系統環境變數；同名時系統環境變數覆蓋 `.env`。這裡的 <code>**</code> 是字典展開；在 <code>2 ** 3</code> 這種位置則代表乘方。</p>
+<p>官方說明：<a href="https://docs.python.org/3.12/reference/expressions.html#dictionary-displays">Python Dictionary displays</a>。</p>
+<p><a href="../lessons/0008-fastapi-lifespan.html">回到第 8 課：Server 啟動與關閉時做什麼？</a></p>
+</article></main></body></html>

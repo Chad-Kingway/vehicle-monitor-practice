@@ -28,3 +28,7 @@
 ## Gaps
 
 - 課程尚未涵蓋瀏覽器開發者工具的實作練習；等讀到 HTTP 資料流時再補充最合適的官方文件。
+- [Python 3.12: `contextlib.asynccontextmanager`](https://docs.python.org/3.12/library/contextlib.html#contextlib.asynccontextmanager)
+  說明如何把 async generator 包成非同步 context manager，搭配 `yield` 控制建立與清理資源。
+- [Python 3.12: Dictionary displays](https://docs.python.org/3.12/reference/expressions.html#dictionary-displays)
+  說明字典中的 `**mapping` 如何展開鍵值，以及重複鍵由較後方的值覆蓋。
