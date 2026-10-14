@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 4 課：網頁怎麼拿到車輛資料？</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+<main>
+  <header>
+    <div class="kicker">Vehicle Monitor · Lesson 04</div>
+    <h1>網頁怎麼拿到車輛資料？</h1>
+    <p class="subtitle">沿著一個網址，從瀏覽器追到 FastAPI。</p>
+  </header>
+  <article>
+    <h2>前端定時讀取</h2>
+    <p>在 <a href="../src/monitor.js"><code>src/monitor.js</code></a> 最後，監控畫面啟動輪詢：</p>
+    <pre><code>startPolling(
+  signal =&gt; api("/api/simulation", { signal }),
+  render,
+  byId("connection")
+);</code></pre>
+    <p>這代表程式反覆呼叫 <code>api("/api/simulation")</code>，成功時把收到的資料交給 <code>render</code>。`api()` 在 <a href="../src/ui.js"><code>src/ui.js</code></a> 裡用瀏覽器的 <code>fetch(url)</code> 發出 HTTP 請求；沒指定其他方法時，預設是 <code>GET</code>，也就是讀取資料。</p>
+
+    <h2>Server 用相同路徑接住請求</h2>
+    <p>打開 <a href="../server/app.py"><code>server/app.py</code></a>，找到：</p>
+    <pre><code>@app.get('/api/simulation')
+async def get_simulation():
+    return app.state.simulation.snapshot()</code></pre>
+    <p><code>@app.get(...)</code> 把 HTTP GET 和網址路徑配對到 Python 函式。這裡呼叫 <code>snapshot()</code>，取得車輛、乘車請求、任務和設定等資料，FastAPI 再把它回傳給網頁。</p>
+    <p>整條線可以濃縮成：<code>monitor.js → ui.js 的 fetch → app.py 路由 → simulation.py snapshot → render(data)</code>。</p>
+    <div class="callout"><strong>追 API 的方法：</strong>先在前端搜尋網址字串（例如 <code>/api/simulation</code>），再在 Server 搜尋同一字串；通常就能找到請求的兩端。</div>
+
+    <section class="exercise">
+      <h2>找出 Server 端的入口</h2>
+      <p>這個網頁用 GET 讀取資料。`server/app.py` 裡，哪一行把 <code>/api/simulation</code> 路徑交給 <code>get_simulation()</code>？請回覆 decorator 那一行。</p>
+      <p>完成後，我們就能沿著 <code>snapshot()</code> 看 Server 怎麼組成回傳資料。</p>
+    </section>
+
+    <h2>延伸閱讀</h2>
+    <p>首選：<a href="https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Network_requests">MDN：Making network requests with JavaScript</a> — 認識瀏覽器如何透過網路讀取資料。</p>
+    <p>速查：<a href="../reference/http-data-flow.html">監控資料的 HTTP 路徑</a>。上一課：<a href="0003-ui-edit-layers.html">UI 修改從哪裡開始？</a></p>
+  </article>
+  <footer>看到前端網址卻找不到 Server 程式時，試著搜尋相同的路徑字串。</footer>
+</main>
+</body>
+</html>

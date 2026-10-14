@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：監控資料的 HTTP 路徑</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>監控資料的 HTTP 路徑</h1><article>
+<h2>一輪讀取</h2>
+<pre><code>src/monitor.js
+  startPolling(signal =&gt; api("/api/simulation", { signal }), render, ...)
+      ↓
+src/ui.js
+  api(...) 使用 fetch(url) 發出 HTTP GET
+      ↓
+server/app.py
+  @app.get('/api/simulation')
+      ↓
+server/simulation.py
+  snapshot() 組合 run_id、settings、vehicles、requests、tasks
+      ↓
+回傳 JSON → 前端 render(data) 更新畫面</code></pre>
+<h2>讀取失敗時</h2><p>`startPolling()` 會顯示 Server 連線中斷；成功讀取才呼叫 `render(data)`，因此斷線時會保留最後顯示的資料。</p>
+<h2>相關檔案</h2><ul><li><a href="../src/monitor.js">src/monitor.js</a>：安排讀取並把資料交給 render。</li><li><a href="../src/ui.js">src/ui.js</a>：呼叫 fetch 與安排輪詢。</li><li><a href="../server/app.py">server/app.py</a>：定義 HTTP 路徑和方法。</li><li><a href="../server/simulation.py">server/simulation.py</a>：產生回傳資料快照。</li></ul>
+</article></main></body></html>

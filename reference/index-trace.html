@@ -10,6 +10,6 @@
   → mountMonitor() 或 mountPassenger()</code></pre>
 <h2>讀程式的方式</h2><ul><li>HTML 的 <code>src</code> 指向哪個檔案？從那裡開始。</li><li>JavaScript 的 <code>import</code> 後面是相對路徑；沿著路徑打開檔案。</li><li>遇到 <code>mountX()</code> 這種呼叫，使用搜尋找它的定義，再看它做了哪些初始化。</li></ul>
 <h2>本專案定位</h2><ul><li><a href="../index.html">index.html</a>：頁面骨架、DOM 元素與 JavaScript 入口。</li><li><a href="../src/main.js">src/main.js</a>：前端分流入口。</li><li><a href="../src/monitor.js">src/monitor.js</a>：監控畫面的初始化。</li><li><a href="../src/passenger.js">src/passenger.js</a>：乘客畫面的初始化。</li></ul>
-<h2>課程</h2><ul><li><a href="../lessons/0001-web-entry-point.html">第 1 課：網頁從哪裡開始？</a></li><li><a href="../lessons/0002-connect-html-js.html">第 2 課：程式怎麼找到畫面上的欄位？</a></li><li><a href="../lessons/0003-ui-edit-layers.html">第 3 課：UI 修改從哪裡開始？</a></li></ul>
+<h2>課程</h2><ul><li><a href="../lessons/0001-web-entry-point.html">第 1 課：網頁從哪裡開始？</a></li><li><a href="../lessons/0002-connect-html-js.html">第 2 課：程式怎麼找到畫面上的欄位？</a></li><li><a href="../lessons/0003-ui-edit-layers.html">第 3 課：UI 修改從哪裡開始？</a></li><li><a href="../lessons/0004-http-read-flow.html">第 4 課：網頁怎麼拿到車輛資料？</a></li></ul>
 <h2>資料流下一站</h2><p>畫面初始化之後，監控功能會透過 HTTP 讀取 FastAPI。下一課會追一個更新週期：網頁送出什麼請求、Server 哪個路由處理、回傳資料如何被顯示。</p>
 </article></main></body></html>
