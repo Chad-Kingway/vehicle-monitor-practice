@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 5 課：讀懂第一個 Server 路由</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+<main>
+  <header>
+    <div class="kicker">Vehicle Monitor · Lesson 05</div>
+    <h1>讀懂第一個 Server 路由</h1>
+    <p class="subtitle">用最短的 GET API 認識 <code>app.py</code> 裡的 Python。</p>
+  </header>
+  <article>
+    <h2>先知道每個 Python 檔案在負責什麼</h2>
+    <p>Server 不是一支 Python 檔包辦所有事情：</p>
+    <ul>
+      <li><code>__main__.py</code>：啟動程式。</li>
+      <li><code>app.py</code>：HTTP 路徑與請求的入口。</li>
+      <li><code>schemas.py</code>：資料長相與輸入驗證。</li>
+      <li><code>simulation.py</code>：模擬狀態與主要處理邏輯。</li>
+      <li><code>dispatch.py</code>：挑選可接任務的車輛。</li>
+      <li><code>routes.py</code>：取得及整理道路路線。</li>
+    </ul>
+    <p>完整清單在<a href="../reference/server-python-map.html">Server Python 檔案地圖</a>。這堂課只讀 <code>app.py</code> 的資料讀取路由。</p>
+
+    <h2>逐行拆解</h2>
+    <p>在 <a href="../server/app.py"><code>server/app.py</code></a> 找到這段：</p>
+    <pre><code>@app.get('/api/simulation')
+async def get_simulation():
+    return app.state.simulation.snapshot()</code></pre>
+    <ol>
+      <li><code>@app.get('/api/simulation')</code>：上面的裝飾器告訴 FastAPI，收到 GET <code>/api/simulation</code> 時，交給下面的函式處理。</li>
+      <li><code>async def get_simulation():</code>：定義一個名為 <code>get_simulation</code> 的函式。先把 <code>async</code> 當成這個 API 使用的函式形式；之後再單獨學非同步細節。</li>
+      <li>縮排的下一行是函式內容。Python 用縮排標出哪些程式屬於這個函式。</li>
+      <li><code>return ...</code>：把結果交回 FastAPI，讓它回傳給發出請求的網頁。</li>
+    </ol>
+    <p>最右邊的 <code>snapshot()</code> 是向模擬物件索取一份目前狀態；它在 <a href="../server/simulation.py"><code>server/simulation.py</code></a> 定義，會整理出輪次、設定、車輛、請求與任務資料。</p>
+    <div class="callout"><strong>先用箭頭讀：</strong>網址和方法 → 函式名稱 → 函式呼叫 → return 回應。逐字都不懂也沒關係，先認出這四個位置。</div>
+
+    <section class="exercise">
+      <h2>小練習</h2>
+      <p>若監控網頁發出 GET <code>/api/simulation</code>，FastAPI 會呼叫哪個函式？請從程式片段找出函式名稱。</p>
+      <p>回覆函式名稱就可以；下一步再一起讀懂 <code>app.state.simulation.snapshot()</code> 裡的點號與括號。</p>
+    </section>
+
+    <h2>延伸閱讀</h2>
+    <p>首選：<a href="https://fastapi.tiangolo.com/zh-hant/tutorial/first-steps/">FastAPI 官方繁體中文：第一步</a> — 看 path operation decorator 與它下面的函式如何配對。</p>
+    <p>Python 函式參考：<a href="https://docs.python.org/3/tutorial/controlflow.html#defining-functions">Python 官方教學：定義函式</a>。上一課：<a href="0004-http-read-flow.html">網頁怎麼拿到車輛資料？</a></p>
+  </article>
+  <footer>程式看起來像一整牆文字時，先找函式名稱、縮排和 return，切成小段讀。</footer>
+</main>
+</body>
+</html>
+
