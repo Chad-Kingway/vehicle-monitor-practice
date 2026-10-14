@@ -1,6 +1,6 @@
 import { createVehicleMap } from "./vehicle-map.js";
 import { mountRouteCheck } from "./route-check.js";
-import { api, element, newPassengerLink, requestCard, startPolling, statusLabel } from "./ui.js";
+import { api, element, newPassengerLink, newRandomPassengerLink, requestCard, startPolling, statusLabel } from "./ui.js";
 
 export function mountMonitor() {
   const routeCheck = mountRouteCheck();
@@ -9,6 +9,9 @@ export function mountMonitor() {
   const newLink = element("a", "新增乘客", "button-link");
   newLink.target = "_blank"; newLink.rel = "noopener";
   newPassengerLink(newLink); header.append(newLink);
+  const randomLink = element("a", "隨機送出一筆", "button-link");
+  randomLink.target = "_blank"; randomLink.rel = "noopener";
+  newRandomPassengerLink(randomLink); header.append(randomLink);
   const fleet = element("section", undefined, "list-section");
   fleet.append(element("h2", "車隊"));
   const fleetList = element("div", undefined, "record-list"); fleet.append(fleetList);

@@ -1,7 +1,7 @@
 import { createVehicleMap } from "./vehicle-map.js";
 import { api, element, requestCard, startPolling } from "./ui.js";
 
-export function mountPassenger(passengerId) {
+export function mountPassenger(passengerId, { autoRandom = false } = {}) {
   document.title = "乘客叫車";
   const panel = document.querySelector(".panel");
   panel.replaceChildren();
@@ -23,8 +23,10 @@ export function mountPassenger(passengerId) {
   const requests = element("section", undefined, "list-section"); requests.append(element("h2", "我的請求"));
   const trip = element("section", undefined, "trip-progress");
   const tripStatus = element("p", "尚無目前請求", "trip-status");
-  const locateVehicle = element("button", "定位承接車"); locateVehicle.type = "button"; locateVehicle.hidden = true;
-  trip.append(tripStatus, locateVehicle);
+  const followLabel = element("label", undefined, "check-label"); followLabel.hidden = true;
+  const follow = document.createElement("input"); follow.type = "checkbox";
+  followLabel.append(follow, document.createTextNode("跟隨承接車"));
+  trip.append(tripStatus, followLabel);
   const list = element("div", undefined, "record-list"); requests.append(list);
   const footer = element("footer");
   const mapStatus = element("p", "載入地圖…"); mapStatus.setAttribute("role", "status");
@@ -44,6 +46,7 @@ export function mountPassenger(passengerId) {
   let displayedVehicle;
   let tripTerminal = false;
   let terminalRenderedRequestId;
+  let pointsEdited = false;
   const pendingKey = `vehicle-monitor.pending-request.${passengerId}`;
   let pendingRequest;
   try { pendingRequest = JSON.parse(localStorage.getItem(pendingKey) || "null"); } catch { pendingRequest = null; }
@@ -75,18 +78,19 @@ export function mountPassenger(passengerId) {
     });
     view?.showPoints(pickup, destination);
   }
-  reset.addEventListener("click", () => { if (!connected || pendingRequest || currentRequest && !["completed", "failed", "cancelled"].includes(currentRequest.status)) return; pickup = destination = undefined; syncPoints(); });
+  reset.addEventListener("click", () => { if (!connected || pendingRequest || currentRequest && !["completed", "failed", "cancelled"].includes(currentRequest.status)) return; pickup = destination = undefined; pointsEdited = true; syncPoints(); });
   createVehicleMap([], message => { mapStatus.textContent = message; }, { onPick(point) {
     if (!connected || busy || pendingRequest || currentRequest && !["completed", "failed", "cancelled"].includes(currentRequest.status)) return;
     if (!pickup || destination) { pickup = point; destination = undefined; }
     else destination = point;
+    pointsEdited = true;
     syncPoints();
   } }).then(map => { view = map; syncPoints(); updateTripMap(); mapStatus.textContent = "地圖已就緒"; }).catch(error => { mapStatus.textContent = "地圖未就緒"; mapError.textContent = error.message; });
-  locateVehicle.addEventListener("click", () => { if (displayedVehicle) view?.locate(displayedVehicle.position); });
+  follow.addEventListener("change", () => { view?.follow(follow.checked && displayedVehicle ? displayedVehicle.id : null); });
   function updateTripMap() {
     const request = latestData?.requests?.[0];
     if (!request) {
-      tripStatus.textContent = "尚無目前請求"; locateVehicle.hidden = true;
+      tripStatus.textContent = "尚無目前請求"; followLabel.hidden = true; follow.checked = false; view?.follow(null);
       if (displayedRequestId !== undefined) {
         view?.clearRoute(); view?.updateFleet([]);
         displayedRequestId = undefined; framedRequestId = undefined; terminalRenderedRequestId = undefined; displayedVehicle = undefined; tripTerminal = false;
@@ -96,17 +100,22 @@ export function mountPassenger(passengerId) {
     const active = !["completed", "failed", "cancelled"].includes(request.status);
     if (request.id !== displayedRequestId) {
       displayedRequestId = request.id; framedRequestId = undefined; tripTerminal = false; terminalRenderedRequestId = undefined; displayedVehicle = undefined;
+      follow.checked = false; view?.follow(null);
     }
     if (tripTerminal && active === false && view && terminalRenderedRequestId === request.id) return;
     const task = latestData.tasks.find(item => item.id === request.task_id);
     const vehicle = request.vehicle_id ? latestData.vehicles.find(item => item.id === request.vehicle_id) : undefined;
-    if (vehicle) displayedVehicle = vehicle;
+    displayedVehicle = vehicle;
     if (active) tripTerminal = false;
     else tripTerminal = true;
+    if (!active) { follow.checked = false; view?.follow(null); }
     if (displayedVehicle) {
       view?.updateFleet([displayedVehicle]);
-      locateVehicle.hidden = false;
-    } else locateVehicle.hidden = true;
+      followLabel.hidden = !active;
+      view?.follow(follow.checked && active ? displayedVehicle.id : null);
+    } else {
+      view?.updateFleet([]); followLabel.hidden = true; view?.follow(null);
+    }
     if (task) {
       view?.showPassengerTrip(task, request, framedRequestId !== request.id && Boolean(task.pickup_route || task.transport_route));
       if (task.pickup_route || task.transport_route) framedRequestId = request.id;
@@ -133,12 +142,17 @@ export function mountPassenger(passengerId) {
   }
   function renderRequests(data) {
     lastRequests = data;
-    currentRequest = data[0];
-    if (currentRequest) {
-      pickup = currentRequest.pickup;
-      destination = currentRequest.destination;
-      count.value = String(currentRequest.passenger_count);
+    const nextRequest = data[0];
+    if (nextRequest?.id !== currentRequest?.id) {
+      pickup = nextRequest?.pickup;
+      destination = nextRequest?.destination;
+      pointsEdited = false;
+    } else if (nextRequest && !pointsEdited) {
+      pickup = nextRequest.pickup;
+      destination = nextRequest.destination;
     }
+    currentRequest = nextRequest;
+    if (currentRequest) count.value = String(currentRequest.passenger_count);
     list.replaceChildren(...data.map(request => requestCard(request, connected ? cancel : null)));
     if (!data.length) list.append(element("p", "尚無請求", "empty"));
     syncPoints();
@@ -172,6 +186,14 @@ export function mountPassenger(passengerId) {
   }
   form.addEventListener("submit", event => { event.preventDefault(); void send(false); });
   random.addEventListener("click", () => void send(true));
+  function consumeAutoRandom() {
+    if (!autoRandom) return;
+    autoRandom = false;
+    const url = new URL(location.href);
+    url.searchParams.delete("random");
+    history.replaceState(history.state, "", url);
+    void send(true);
+  }
   startPolling(async signal => {
     const [snapshot, own] = await Promise.all([api("/api/simulation", { signal }), api(`/api/requests?passenger_id=${encodeURIComponent(passengerId)}`, { signal })]);
     // 同一輪次的資料才合併，避免重啟交錯顯示上一輪請求。
@@ -198,7 +220,7 @@ export function mountPassenger(passengerId) {
     return { ...snapshot, requests: own.requests };
   }, data => { runId = data.run_id; latestData = data; renderRequests(data.requests); }, connection, (ok) => {
     connected = ok;
-    if (ok) renderRequests(lastRequests);
+    if (ok) { renderRequests(lastRequests); consumeAutoRandom(); }
     else list.replaceChildren(...lastRequests.map(request => requestCard(request)));
     syncPoints();
   });

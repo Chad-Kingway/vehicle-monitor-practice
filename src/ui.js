@@ -15,6 +15,12 @@ export function newPassengerLink(link) {
   link.addEventListener("click", refresh);
   link.addEventListener("auxclick", refresh);
 }
+export function newRandomPassengerLink(link) {
+  const refresh = () => { link.href = `/?passenger=${crypto.randomUUID()}&random=1`; };
+  refresh();
+  link.addEventListener("click", refresh);
+  link.addEventListener("auxclick", refresh);
+}
 export async function api(url, { method = "GET", body, signal } = {}) {
   const response = await fetch(url, {
     method, cache: "no-store", signal: signal || AbortSignal.timeout(15000),
