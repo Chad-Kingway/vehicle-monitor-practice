@@ -1,0 +1,27 @@
+# UI 修改從哪一層開始
+
+## 先判斷你要改什麼
+
+| 想改的事情 | 先找哪裡 | 專案例子 |
+| --- | --- | --- |
+| 頁面上有哪些欄位或標題 | HTML | `index.html` 的 `<section class="vehicle-card">` |
+| 顏色、字體、間距、排列 | CSS | `src/style.css` 的 `.vehicle-card` 規則 |
+| 點擊後做什麼、資料如何更新 | JavaScript | `src/monitor.js` 的事件處理與 `render()` |
+
+## id 與 class 是 CSS/程式找元素的線索
+
+- HTML 的 `id="heading"` 對應 JavaScript `byId("heading")`，也能用 CSS `#heading` 選取。
+- HTML 的 `class="vehicle-card"` 對應 CSS `.vehicle-card`。class 通常描述一種樣式或一組元件；多個元素可共用同一個 class。
+
+## 本專案的混合方式
+
+- `index.html` 先寫出頁面骨架和主要欄位。
+- `src/monitor.js` 也會呼叫 `document.createElement()` 建立車隊清單、按鈕和設定表單，再放進頁面。
+- `src/style.css` 透過 class 為這些靜態或動態建立的元素套用外觀。
+- 如果某個元素是 JavaScript 動態建立的，新增時要記得設定對應的 class，CSS 才能選中它。
+
+## 快速決策
+
+1. 先用一句話描述改動：是結構、外觀，還是互動／資料？
+2. 從上表的檔案開始搜尋相關 `id` 或 `class`。
+3. 如果改動跨層，就沿著元素的建立、樣式與事件一路追完。

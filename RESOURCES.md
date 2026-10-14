@@ -8,6 +8,8 @@
   說明 HTML 如何載入 JavaScript，以及 module script 的基本行為。用於讀懂 `index.html` 的 `<script type="module">`。
 - [MDN: JavaScript modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)
   說明 `import` / `export` 如何拆分程式。用於沿著 `src/main.js` 找到前端功能模組。
+- [MDN: Getting started with CSS](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Getting_started)
+  說明如何把 CSS 套用至 HTML，並用選擇器指定元素。用於閱讀 `src/style.css` 與調整 UI 外觀。
 - [MDN: Making network requests with JavaScript](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Network_requests)
   說明瀏覽器如何用網路請求取得資料。用於理解前端和 Server 的 HTTP 交換。
 - [FastAPI: First Steps](https://fastapi.tiangolo.com/tutorial/first-steps/)
