@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 6 課：讀懂 Server 的物件與方法</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body>
+<main>
+<header><div class="kicker">Vehicle Monitor · Lesson 06</div><h1>讀懂 Server 的物件與方法</h1><p class="subtitle">拆開 <code>app.state.simulation.snapshot()</code>，追資料從哪裡來。</p></header>
+<article>
+<h2>物件放在哪裡？</h2>
+<p>在 <a href="../server/app.py"><code>server/app.py</code></a> 的啟動流程裡，程式會建立模擬器，再把它放進 FastAPI 的 <code>app.state</code>：</p>
+<pre><code>simulation = Simulation(settings, planner)
+app.state.simulation = simulation</code></pre>
+<p>把 <code>.</code> 想成「從左邊這個東西，取得右邊的欄位或功能」。所以 <code>app.state.simulation</code> 表示：從 app 找到 state，再從 state 找到 simulation 物件。</p>
+
+<h2>最後的括號代表呼叫</h2>
+<p>繼續看 <a href="../server/simulation.py"><code>server/simulation.py</code></a>，模擬器類別裡有：</p>
+<pre><code>def snapshot(self):
+    return {
+        'run_id': self.run_id,
+        'settings': self.settings,
+        'vehicles': [...],
+        'requests': [...],
+        'tasks': [...],
+    }</code></pre>
+<p><code>snapshot</code> 是這個模擬器提供的方法；加上 <code>()</code> 就是執行它。<code>self</code> 指正在執行這個方法的 Simulation 物件，所以 <code>self.vehicles</code> 是這一輪模擬器裡保存的車輛。</p>
+<p>大括號 <code>{...}</code> 在這裡建立一份字典，裡面用名稱對應資料。<code>return</code> 把字典交回 <code>get_simulation()</code>，FastAPI 再轉成 JSON 回給網頁。</p>
+<div class="callout"><strong>讀法：</strong><code>app.state.simulation.snapshot()</code> = 找到模擬器 → 執行它的 snapshot 方法 → 取得一份目前狀態。</div>
+
+<section class="exercise"><h2>小練習</h2><p>看 <code>snapshot()</code> 的回傳字典：它用了哪些兩個鍵，分別代表「本輪識別」和「車輛清單」？請回覆這兩個鍵名。</p><p>提示：字典裡每一項都長得像 <code>'鍵名': 值</code>。</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://docs.python.org/3/tutorial/classes.html">Python 官方教學：類別與方法</a> — 看 instance、attribute 和 method 的基本意思。</p><p>回顧：<a href="0005-python-server-route.html">讀懂第一個 Server 路由</a>。速查：<a href="../reference/server-python-map.html">Server Python 檔案地圖</a>。</p>
+</article><footer>先追物件從哪裡建立，再看它提供了哪些方法；不必一次把整個類別讀完。</footer>
+</main>
+</body></html>
+
