@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 7 課：self 指的是哪個東西？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 07</div><h1><code>self</code> 指的是哪個東西？</h1><p class="subtitle">讀懂 <code>self.vehicles</code>，就能看出資料放在哪個物件裡。</p></header>
+<article>
+<h2>Simulation 物件保存自己的資料</h2>
+<p><a href="../server/simulation.py"><code>server/simulation.py</code></a> 裡有一個 <code>Simulation</code> 類別。建立它時，初始化函式會把資料放在這個物件上：</p>
+<pre><code>class Simulation:
+    def __init__(self, settings, planner):
+        self.settings = settings
+        self.planner = planner
+        self.vehicles = {...}
+        self.requests = {}
+        self.tasks = {}</code></pre>
+<p>可以先把「物件」想成一個裝著相關資料和功能的東西。這個 Simulation 物件的欄位包含 <code>settings</code>、<code>vehicles</code>、<code>requests</code> 和 <code>tasks</code>。</p>
+
+<h2><code>self</code> 是目前這個物件</h2>
+<p><code>self</code> 是 Python 方法常用的第一個參數名稱，指正在執行方法的那個物件。它不是固定代表 app，也不是固定代表單一車輛。</p>
+<p>因此 <code>self.vehicles</code> 就是「目前這個 Simulation 物件的 vehicles 欄位」。在 <code>snapshot(self)</code> 裡，<code>self</code> 指向先前放進 <code>app.state.simulation</code> 的那個模擬器。</p>
+<div class="callout"><strong>串起來讀：</strong>呼叫 <code>app.state.simulation.snapshot()</code> 時，Python 會讓 <code>self</code> 指向 <code>app.state.simulation</code>；於是方法裡的 <code>self.vehicles</code> 讀到這個模擬器保存的車輛資料。</div>
+
+<section class="exercise"><h2>小練習</h2><p>在 <code>snapshot(self)</code> 裡，<code>self</code> 指的是網頁、FastAPI app，還是 <code>Simulation</code> 物件？</p><p>回覆一個選項即可。</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://docs.python.org/3/tutorial/classes.html">Python 官方教學：類別與方法</a> — 看方法第一個參數如何指向目前物件。</p><p>上一課：<a href="0006-python-object-method.html">讀懂 Server 的物件與方法</a>。<a href="../reference/server-python-map.html">Server Python 檔案地圖</a></p>
+</article><footer>讀到 <code>self.x</code> 時，先問：目前是哪個物件的方法正在執行？</footer>
+</main></body></html>
