@@ -72,7 +72,9 @@ input[type="checkbox"] { accent-color: #6dd6b0; }
 .fleet-item span { font-size: 11px; color: #b6c8d7; }
 .actions { display: flex; align-items: center; gap: 16px; margin: 8px 0 12px; }
 .check-label { display: flex; align-items: center; gap: 5px; font-size: 12px; }
-.speed-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.speed-form { display: grid; gap: 8px; }
+.speed-form label { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; font-size: 12px; color: #bfcedd; }
+.speed-form input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: #6dd6b0; }
 .speed-form p { grid-column: 1 / -1; margin: 0; font-size: 12px; color: #a8bfdb; }
 .passenger-form { display: grid; gap: 12px; padding: 16px; border: 1px solid #304055; border-radius: 12px; background: #18283c; }
 .passenger-form p, .passenger-form label { font-size: 12px; margin: 0; }

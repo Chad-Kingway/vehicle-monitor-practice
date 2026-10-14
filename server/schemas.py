@@ -114,7 +114,7 @@ class RandomRequestInput(PassengerInput):
 
 class SpeedInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    speed_multiplier: float = Field(gt=0, le=300, allow_inf_nan=False)
+    speed_multiplier: int = Field(ge=1, le=300, strict=True)
 
 
 class RouteQuery(BaseModel):

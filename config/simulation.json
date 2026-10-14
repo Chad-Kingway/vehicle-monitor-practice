@@ -1,5 +1,5 @@
 {
-  "speed_multiplier": 10,
+  "speed_multiplier": 60,
   "report_interval_seconds": 1,
   "poll_interval_seconds": 1,
   "offline_threshold_seconds": 10,

@@ -23,7 +23,7 @@ class VehicleClient:
         self.position = list(vehicle["initial_position"])
         self.heading = vehicle["initial_heading"]
         self.interval = 1.0
-        self.multiplier = 10.0
+        self.multiplier = 60.0
 
     def reset(self, run_id, vehicle):
         self.run_id = run_id

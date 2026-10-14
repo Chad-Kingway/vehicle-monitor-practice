@@ -25,10 +25,17 @@ export function mountMonitor() {
   const taskList = element("div", undefined, "record-list"); tasks.append(taskList);
   document.querySelector(".settings").before(requests, tasks);
   const speedForm = element("form", undefined, "speed-form");
-  const speedInput = document.createElement("input"); speedInput.type = "number"; speedInput.min = ".1"; speedInput.step = ".1"; speedInput.required = true; speedInput.setAttribute("aria-label", "全車速度倍率");
-  const speedButton = element("button", "套用速度"); speedButton.type = "submit";
+  const speedLabel = element("label", "全車速度");
+  const speedInput = document.createElement("input"); speedInput.type = "range"; speedInput.min = "1"; speedInput.max = "300"; speedInput.step = "1"; speedInput.value = "60"; speedInput.setAttribute("aria-label", "全車速度倍率");
+  const speedValue = element("output", "60×");
+  speedLabel.append(speedInput, speedValue);
   const speedStatus = element("p"); speedStatus.setAttribute("role", "status");
-  speedForm.append(speedInput, speedButton, speedStatus); document.querySelector(".settings").before(speedForm);
+  speedForm.append(speedLabel, speedStatus); document.querySelector(".settings").before(speedForm);
+  let speedConfirmed = 60;
+  let speedLastSentAt = 0;
+  let speedTimer;
+  let speedQueued = Promise.resolve();
+  let speedLastRequested = 60;
   let snapshot;
   let selected;
   let mapView;
@@ -63,13 +70,37 @@ export function mountMonitor() {
   }
   locate.addEventListener("click", () => { const vehicle = selectedVehicle(); if (vehicle) mapView?.locate(vehicle.position); });
   follow.addEventListener("change", renderSelection);
-  speedForm.addEventListener("submit", async (event) => {
-    event.preventDefault(); speedButton.disabled = true;
-    try {
-      const data = await api("/api/simulation/speed", { method: "PUT", body: { speed_multiplier: Number(speedInput.value) } });
-      speedStatus.textContent = `已套用 ${data.settings.speed_multiplier}×`;
-    } catch (error) { speedStatus.textContent = error.message; }
-    finally { speedButton.disabled = false; }
+  function submitSpeed(value) {
+    if (value === speedLastRequested) return speedQueued;
+    speedLastRequested = value;
+    speedQueued = speedQueued.then(async () => {
+      try {
+        const data = await api("/api/simulation/speed", { method: "PUT", body: { speed_multiplier: value } });
+        speedConfirmed = data.settings.speed_multiplier;
+        speedStatus.textContent = `已套用 ${speedConfirmed}×`;
+      } catch (error) {
+        try {
+          const current = await api("/api/simulation");
+          speedConfirmed = current.settings.speed_multiplier;
+          byId("speed").textContent = `${speedConfirmed}×`;
+        } catch { /* 無法重新讀取時，保留上次成功通訊確認的值。 */ }
+        speedStatus.textContent = `更新失敗：${error.message}；Server 已確認 ${speedConfirmed}×`;
+        speedLastRequested = speedConfirmed;
+      }
+    });
+    speedLastSentAt = Date.now();
+    return speedQueued;
+  }
+  speedInput.addEventListener("input", () => {
+    speedValue.value = `${speedInput.value}×`;
+    clearTimeout(speedTimer);
+    const remaining = 250 - (Date.now() - speedLastSentAt);
+    if (remaining <= 0) void submitSpeed(Number(speedInput.value));
+    else speedTimer = setTimeout(() => submitSpeed(Number(speedInput.value)), remaining);
+  });
+  speedInput.addEventListener("change", () => {
+    clearTimeout(speedTimer);
+    void submitSpeed(Number(speedInput.value));
   });
   function render(data) {
     if (snapshot?.run_id !== data.run_id) routeKey = undefined;
@@ -93,7 +124,12 @@ export function mountMonitor() {
     }));
     if (!data.tasks.length) taskList.append(element("p", "尚無任務", "empty"));
     byId("speed").textContent = `${data.settings.speed_multiplier}×`;
-    if (document.activeElement !== speedInput && !speedButton.disabled) speedInput.value = data.settings.speed_multiplier;
+    speedConfirmed = data.settings.speed_multiplier;
+    if (document.activeElement !== speedInput) {
+      speedInput.value = data.settings.speed_multiplier;
+      speedValue.value = `${data.settings.speed_multiplier}×`;
+      speedLastRequested = data.settings.speed_multiplier;
+    }
     byId("report-interval").textContent = `${data.settings.report_interval_seconds} 秒`;
     byId("poll-interval").textContent = `${data.settings.poll_interval_seconds} 秒`;
     byId("run-id").textContent = data.run_id.slice(0, 8); byId("run-id").title = data.run_id;
