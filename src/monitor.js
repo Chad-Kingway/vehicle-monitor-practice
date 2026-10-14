@@ -64,8 +64,9 @@ export function mountMonitor() {
   let speedConfirmed = 60;
   let speedLastSentAt = 0;
   let speedTimer;
-  let speedQueued = Promise.resolve();
-  let speedLastRequested = 60;
+  let speedInFlight = false;
+  let speedLastSent = 60;
+  let speedDesired = 60;
   let snapshot;
   let selected;
   let mapView;
@@ -100,37 +101,46 @@ export function mountMonitor() {
   }
   locate.addEventListener("click", () => { const vehicle = selectedVehicle(); if (vehicle) mapView?.locate(vehicle.position); });
   follow.addEventListener("change", renderSelection);
-  function submitSpeed(value) {
-    if (value === speedLastRequested) return speedQueued;
-    speedLastRequested = value;
-    speedQueued = speedQueued.then(async () => {
-      try {
-        const data = await api("/api/simulation/speed", { method: "PUT", body: { speed_multiplier: value } });
-        speedConfirmed = data.settings.speed_multiplier;
-        speedStatus.textContent = `已套用 ${speedConfirmed}×`;
-      } catch (error) {
-        try {
-          const current = await api("/api/simulation");
-          speedConfirmed = current.settings.speed_multiplier;
-          byId("speed").textContent = `${speedConfirmed}×`;
-        } catch { /* 無法重新讀取時，保留上次成功通訊確認的值。 */ }
-        speedStatus.textContent = `更新失敗：${error.message}；Server 已確認 ${speedConfirmed}×`;
-        speedLastRequested = speedConfirmed;
-      }
-    });
+  function scheduleSpeed(value) {
+    speedDesired = value;
+    clearTimeout(speedTimer);
+    const remaining = Math.max(0, 250 - (Date.now() - speedLastSentAt));
+    speedTimer = setTimeout(sendDesiredSpeed, remaining);
+  }
+  async function sendDesiredSpeed() {
+    speedTimer = undefined;
+    if (speedInFlight) {
+      speedTimer = setTimeout(sendDesiredSpeed, 250);
+      return;
+    }
+    if (speedDesired === speedLastSent) return;
+    const value = speedDesired;
+    speedInFlight = true;
+    speedLastSent = value;
     speedLastSentAt = Date.now();
-    return speedQueued;
+    try {
+      const data = await api("/api/simulation/speed", { method: "PUT", body: { speed_multiplier: value } });
+      speedConfirmed = data.settings.speed_multiplier;
+      speedStatus.textContent = `已套用 ${speedConfirmed}×`;
+    } catch (error) {
+      try {
+        const current = await api("/api/simulation");
+        speedConfirmed = current.settings.speed_multiplier;
+        byId("speed").textContent = `${speedConfirmed}×`;
+      } catch { /* 無法重新讀取時，保留上次成功通訊確認的值。 */ }
+      speedStatus.textContent = `更新失敗：${error.message}；Server 已確認 ${speedConfirmed}×`;
+      speedLastSent = speedConfirmed;
+    } finally {
+      speedInFlight = false;
+      if (speedDesired !== speedLastSent) scheduleSpeed(speedDesired);
+    }
   }
   speedInput.addEventListener("input", () => {
     speedValue.value = `${speedInput.value}×`;
-    clearTimeout(speedTimer);
-    const remaining = 250 - (Date.now() - speedLastSentAt);
-    if (remaining <= 0) void submitSpeed(Number(speedInput.value));
-    else speedTimer = setTimeout(() => submitSpeed(Number(speedInput.value)), remaining);
+    scheduleSpeed(Number(speedInput.value));
   });
   speedInput.addEventListener("change", () => {
-    clearTimeout(speedTimer);
-    void submitSpeed(Number(speedInput.value));
+    scheduleSpeed(Number(speedInput.value));
   });
   function render(data) {
     if (snapshot?.run_id !== data.run_id) routeKey = undefined;
@@ -158,7 +168,7 @@ export function mountMonitor() {
     if (document.activeElement !== speedInput) {
       speedInput.value = data.settings.speed_multiplier;
       speedValue.value = `${data.settings.speed_multiplier}×`;
-      speedLastRequested = data.settings.speed_multiplier;
+      speedLastSent = data.settings.speed_multiplier;
     }
     byId("report-interval").textContent = `${data.settings.report_interval_seconds} 秒`;
     byId("poll-interval").textContent = `${data.settings.poll_interval_seconds} 秒`;

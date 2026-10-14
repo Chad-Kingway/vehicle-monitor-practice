@@ -136,13 +136,16 @@ class Simulation:
         existing = self.request_view(self.requests[existing_id]) if existing_id else None
         return key, existing
 
+    def has_active_request(self, passenger_id):
+        return any(item['passenger_id'] == passenger_id and item['status'] not in ('completed', 'failed', 'cancelled') for item in self.requests.values())
+
     async def submit(self, data):
         async with self.lock:
             key, existing = self.submission_identity(data)
             return existing if existing is not None else self.create_request_locked(data, key)
 
     def create_request_locked(self, data, key):
-        if any(item['passenger_id'] == data.passenger_id and item['status'] not in ('completed', 'failed', 'cancelled') for item in self.requests.values()):
+        if self.has_active_request(data.passenger_id):
             raise HTTPException(409, '已有尚未結束的乘車請求。')
         if data.passenger_count > max(item['passenger_capacity'] for item in self.vehicles.values()):
             raise HTTPException(422, '乘車人數超過車隊最大載客上限。')
@@ -160,7 +163,7 @@ class Simulation:
             if existing is not None:
                 return existing
             bounds = self.settings.random_requests
-            if any(item['passenger_id'] == data.passenger_id and item['status'] not in ('completed', 'failed', 'cancelled') for item in self.requests.values()):
+            if self.has_active_request(data.passenger_id):
                 raise HTTPException(409, '已有尚未結束的乘車請求。')
             intent = self.random_request_intents.get(key) if key else None
             if intent is None:
