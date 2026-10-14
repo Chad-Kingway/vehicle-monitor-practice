@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: awaiting-validation
 
 # 02：回報與網頁更新間隔永久設定
 
@@ -22,3 +22,4 @@ Status: ready-for-agent
 ## Comments
 
 - 2026-10-14：使用者確認 8 張任務拆分後發布。依 Blocked by 等待前置任務完成，沿用已確認規格及人工驗收；未開始功能實作。
+- 2026-10-14：已實作設定 API、原子更新設定檔與監控表單。瀏覽器保存 0.3／0.35 秒、HTTP 拒絕 10 秒回報間隔（422），並重啟 Server 核對自訂間隔保留；已還原設定檔為 0.25／0.25。尚未實測車輛 Client 採用時點、寫檔失敗與多監控頁競爭。

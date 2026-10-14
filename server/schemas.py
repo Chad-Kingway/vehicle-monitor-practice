@@ -117,6 +117,20 @@ class SpeedInput(BaseModel):
     speed_multiplier: int = Field(ge=1, le=300, strict=True)
 
 
+class UpdateIntervalsInput(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    report_interval_seconds: PositiveSeconds
+    poll_interval_seconds: PositiveSeconds
+
+    @model_validator(mode='after')
+    def validate_step(self):
+        for value in (self.report_interval_seconds, self.poll_interval_seconds):
+            steps = (value - 0.1) / 0.05
+            if abs(steps - round(steps)) > 1e-7:
+                raise ValueError('更新間隔須以 0.05 秒為步進。')
+        return self
+
+
 class RouteQuery(BaseModel):
     model_config = ConfigDict(extra='forbid')
     origin: Position

@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: awaiting-validation
 
 # 04：請求送出結果不明與刷新恢復
 
@@ -22,3 +22,4 @@ Status: ready-for-agent
 ## Comments
 
 - 2026-10-14：使用者確認 8 張任務拆分後發布。依 Blocked by 等待前置任務完成，沿用已確認規格及人工驗收；未開始功能實作。
+- 2026-10-14：已實作瀏覽器送出意圖保存、同輪原識別碼恢復、隨機重試沿用 Server 暫存起訖及新輪次清除。尚未模擬回應遺失、刷新恢復、斷線及新輪次的人工情境。

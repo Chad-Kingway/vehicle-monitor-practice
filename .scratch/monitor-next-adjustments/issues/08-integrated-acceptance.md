@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: awaiting-validation
 
 # 08：本輪 HTTP 與網頁整合驗收
 
@@ -23,3 +23,4 @@ Status: ready-for-agent
 ## Comments
 
 - 2026-10-14：使用者確認 8 張任務拆分後發布。依 Blocked by 等待前置任務完成，沿用已確認規格及人工驗收；未開始功能實作。
+- 2026-10-14：已執行可用的預設值、間隔保存／拒絕／重啟、單筆限制／等待取消、乘客頁入口、監控 POI 與空閒多模型比例檢查；完整結果與未執行情境記於 [驗收紀錄](../acceptance-log.md)。12 項人工驗收未全部完成，維持等待驗收，沒有將 build 或 API 檢查視為地圖／接送驗收。

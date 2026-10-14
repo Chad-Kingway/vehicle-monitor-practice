@@ -21,11 +21,24 @@ export async function api(url, { method = "GET", body, signal } = {}) {
     ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
   });
   const data = await response.json();
-  if (!response.ok) throw new Error(typeof data.detail === "string" ? data.detail : `HTTP ${response.status}`);
+  if (!response.ok) {
+    if (typeof data.detail === "string") throw new Error(data.detail);
+    if (Array.isArray(data.detail)) {
+      const labels = { report_interval_seconds: "車輛回報間隔", poll_interval_seconds: "網頁更新間隔" };
+      const messages = data.detail.map(item => {
+        const field = labels[item.loc?.at(-1)];
+        if (field && item.type === "greater_than_equal") return `${field}不得小於 0.1 秒。`;
+        if (field && item.type === "less_than_equal") return `${field}不得大於 60 秒。`;
+        return String(item.msg || "設定無效").replace(/^Value error, /, "");
+      });
+      throw new Error(messages.join(" "));
+    }
+    throw new Error(`HTTP ${response.status}`);
+  }
   return data;
 }
 // 只有成功讀取才替換畫面資料，斷線保留最後狀態。
-export function startPolling(load, render, connection) {
+export function startPolling(load, render, connection, onStatus) {
   let stopped = false;
   let timer;
   let controller;
@@ -41,10 +54,12 @@ export function startPolling(load, render, connection) {
       render(data);
       connection.textContent = "Server 已連線";
       connection.dataset.state = "online";
+      onStatus?.(true);
     } catch {
       if (!stopped) {
         connection.textContent = "Server 連線中斷";
         connection.dataset.state = "offline";
+        onStatus?.(false);
       }
     } finally {
       clearTimeout(timeout);

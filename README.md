@@ -53,14 +53,14 @@ Copy-Item .env.example .env
 
 ## 設定與 HTTP
 
-修改 `config/simulation.json` 後重啟 Server 與 Client。預設三台四人座車輛，各車識別碼、容量與固定初始位置可設定；監控頁可即時修改全車速度，其餘設定依下表重啟生效。
+修改 `config/simulation.json` 的一般設定後重啟 Server 與 Client。預設三台四人座車輛，各車識別碼、容量與固定初始位置可設定；監控頁可即時調整速度及保存回報／更新間隔。
 
 | 設定 | 預設 |
 | --- | --- |
 | 車輛識別碼、載客上限 | `vehicle-01`～`vehicle-03`、各 4 人 |
 | 初始位置、朝向 | `[121.561, 25.0334]`、0° |
 | 行駛速度倍率 | 60 |
-| 車輛回報、網頁更新 | 各 1 秒 |
+| 車輛回報、網頁更新 | 各 0.25 秒；監控頁可保存 0.1～60 秒、步進 0.05 秒，回報間隔須小於離線門檻 |
 | 車輛離線門檻 | 10 秒 |
 | 路線查詢時間上限 `route_timeout_seconds` | 10 秒，包含等待併發空位 |
 | 路線查詢併發 `route_concurrency_limit` | 1，可調整；此值不代表官方配額 |
@@ -105,7 +105,8 @@ Server 按送出順序掃描等待請求，選擇容量足夠、在線且空閒�
 | 設定 | 生效方式 |
 | --- | --- |
 | `speed_multiplier` | 監控頁即時修改，不重置行駛進度 |
-| `vehicles`、回報／更新間隔、離線門檻 | 重啟 Server 與車隊 Client |
+| `vehicles`、離線門檻 | 重啟 Server 與車隊 Client |
+| 回報／更新間隔 | 監控頁保存後即時生效並寫入設定檔；重啟 Server 後保留 |
 | 路線逾時、嘗試次數、併發上限 | 重啟 Server |
 | `random_requests` 範圍、距離、抽樣上限 | 重啟 Server |
 | `generator` 間隔與總數 | 重啟生成器；生成器直接讀取指定設定檔 |
@@ -123,8 +124,11 @@ Server 按送出順序掃描等待請求，選擇容量足夠、在線且空閒�
 | `GET /api/vehicles/{id}/task` | 取得有效任務、輪次與設定 |
 | `POST /api/vehicles/{id}/reports` | 位置、朝向及 `{run_id, task_id, phase, progress}` 核對進度／完成 |
 | `PUT /api/simulation/speed` | `{speed_multiplier}` 修改速度 |
+| `PUT /api/simulation/intervals` | `{report_interval_seconds, poll_interval_seconds}` 驗證並保存兩種間隔；只更新這兩項設定 |
 
-`client_request_id` 用於同輪不確定送單結果的重試，避免重複產生請求。此免登入識別僅供本機模擬。
+速度拉桿為 1～300 整數，預設 60，不永久保存。車輛回報與網頁更新間隔各自保存至設定檔，車輛及網頁在下一次成功 HTTP 通訊後套用，不重置模擬。`client_request_id` 用於同輪不確定送單結果的重試，避免重複產生請求；同一乘客最多一筆進行中請求，乘客頁只顯示目前請求。此免登入識別僅供本機模擬。
+
+所有地圖頁均可切換 POI 及調整模型比例。模型比例為 1～100、預設 30；POI 預設顯示。兩項偏好由瀏覽器依監控／乘客頁類型分別保存，不寫入 Server 設定。
 
 ## 道路路線整合驗收
 

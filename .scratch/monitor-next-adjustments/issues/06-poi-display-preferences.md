@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: awaiting-validation
 
 # 06：POI 切換與顯示偏好恢復
 
@@ -22,3 +22,4 @@ Status: ready-for-agent
 ## Comments
 
 - 2026-10-14：使用者確認 8 張任務拆分後發布。依 Blocked by 等待前置任務完成，沿用已確認規格及人工驗收；未開始功能實作。
+- 2026-10-14：已實作各地圖 POI 切換、依頁面類型保存、跨分頁事件同步與樣式載入重套，使用官方 `onLayer`／`offLayer`／`redraw`。瀏覽器確認監控頁切換與刷新保存；尚未驗收乘客頁同步、樣式重載及錯誤回復。

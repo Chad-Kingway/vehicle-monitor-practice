@@ -7,7 +7,7 @@ from dotenv import dotenv_values
 import httpx
 
 from .routes import RouteError, RoutePlanner
-from .schemas import PassengerInput, RandomRequestInput, RideRequestInput, RoadRoute, RouteQuery, SimulationSettings, SpeedInput, VehicleReport
+from .schemas import PassengerInput, RandomRequestInput, RideRequestInput, RoadRoute, RouteQuery, SimulationSettings, SpeedInput, UpdateIntervalsInput, VehicleReport
 from .simulation import Simulation
 
 
@@ -53,6 +53,10 @@ def create_app(config_path: Path = DEFAULT_CONFIG, *, route_transport=None) -> F
     @app.put('/api/simulation/speed')
     async def set_speed(data: SpeedInput):
         return await app.state.simulation.set_speed(data.speed_multiplier)
+
+    @app.put('/api/simulation/intervals')
+    async def set_intervals(data: UpdateIntervalsInput):
+        return await app.state.simulation.set_intervals(data.report_interval_seconds, data.poll_interval_seconds, config_path)
 
     @app.get('/api/requests')
     async def get_requests(passenger_id: str):

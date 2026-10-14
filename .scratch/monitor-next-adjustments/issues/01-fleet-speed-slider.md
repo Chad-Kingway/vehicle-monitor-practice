@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: awaiting-validation
 
 # 01：全車速度拉桿與續行
 
@@ -22,3 +22,4 @@ Status: ready-for-agent
 ## Comments
 
 - 2026-10-14：使用者確認 8 張任務拆分後發布。依 Blocked by 等待前置任務完成，沿用已確認規格及人工驗收；未開始功能實作。
+- 2026-10-14：已實作並提交整數速度拉桿、拖曳節流與放開送出最終值，預設改為 60；build 與語法檢查通過。尚未在真實接送途中核對續行與速度重啟行為，等待人工驗收。

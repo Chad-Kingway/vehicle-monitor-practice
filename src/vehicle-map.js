@@ -2,6 +2,16 @@ import { loadMapThree, withTimeout } from "./sdk.js";
 
 const MODEL_URL = "/models/car/scene.gltf";
 const INITIAL_ROTATION = { x: 90, y: 180, z: 0 };
+const MODEL_INITIAL_SCALE = 10;
+const PREFERENCE_BASE_SCALE = 30;
+const DEFAULT_PREFERENCES = { poi: true, scale: 30 };
+
+function readPreferences(key) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || "null");
+    return { poi: typeof saved?.poi === "boolean" ? saved.poi : true, scale: Number.isInteger(saved?.scale) && saved.scale >= 1 && saved.scale <= 100 ? saved.scale : 30 };
+  } catch { return { ...DEFAULT_PREFERENCES }; }
+}
 
 async function checkModelAssets() {
   const response = await fetch(MODEL_URL, { signal: AbortSignal.timeout(10000) });
@@ -24,7 +34,7 @@ async function checkModelAssets() {
 }
 
 
-export async function createVehicleMap(vehicles, status, { center, onPick } = {}) {
+export async function createVehicleMap(vehicles, status, { center, onPick, preferenceScope = onPick ? "passenger" : "monitor" } = {}) {
   const fleet = Array.isArray(vehicles) ? vehicles : [vehicles];
   const accessKey = import.meta.env.ACCESS_KEY;
   const accessToken = import.meta.env.ACCESS_TOKEN;
@@ -42,10 +52,86 @@ export async function createVehicleMap(vehicles, status, { center, onPick } = {}
     const loaded = () => { map.off("style.load", loaded); resolve(); };
     map.on("style.load", loaded); if (map.isStyleLoaded()) loaded();
   }), 45000, "地圖樣式載入逾時，請檢查勤崴憑證與網路。");
+  const preferenceKey = `vehicle-monitor.map-preferences.${preferenceScope}`;
+  let preferences = readPreferences(preferenceKey);
+  let poiControlDisabled = false;
+  let scaleControlDisabled = false;
+  let appliedPoi = true;
+  let appliedScale = 30;
+  const mapRegion = document.getElementById("map").parentElement;
+  const controls = document.createElement("div"); controls.className = "map-controls";
+  const poiButton = document.createElement("button"); poiButton.type = "button";
+  const scaleLabel = document.createElement("label"); scaleLabel.className = "map-scale-control";
+  scaleLabel.append(document.createTextNode("模型比例"));
+  const scaleInput = document.createElement("input"); scaleInput.type = "range"; scaleInput.min = "1"; scaleInput.max = "100"; scaleInput.step = "1"; scaleInput.setAttribute("aria-label", "模型比例");
+  const scaleValue = document.createElement("output");
+  scaleLabel.append(scaleInput, scaleValue);
+  const preferenceStatus = document.createElement("span"); preferenceStatus.className = "map-preference-status"; preferenceStatus.setAttribute("role", "status");
+  controls.append(poiButton, scaleLabel, preferenceStatus); mapRegion.append(controls);
+  const updateControls = () => {
+    poiButton.textContent = `POI：${preferences.poi ? "顯示" : "隱藏"}`;
+    poiButton.disabled = poiControlDisabled;
+    scaleInput.value = String(preferences.scale); scaleInput.disabled = scaleControlDisabled;
+    scaleValue.value = `${preferences.scale}`;
+  };
   const models = new Map();
   const latest = new Map();
   const pending = new Set();
   let followId;
+  function applyPoi(value) {
+    if (value) map.onLayer("poi_"); else map.offLayer("poi_");
+    map.redraw();
+  }
+  function modelScale(value) { return value / PREFERENCE_BASE_SCALE; }
+  function applyScale(value) {
+    for (const model of models.values()) model.setScale(modelScale(value));
+    map.redraw();
+  }
+  function savePreferences() {
+    try { localStorage.setItem(preferenceKey, JSON.stringify(preferences)); }
+    catch { preferenceStatus.textContent = "偏好未保存"; return; }
+    preferenceStatus.textContent = "";
+  }
+  function applyLoadedPreferences() {
+    poiControlDisabled = false; scaleControlDisabled = false; updateControls();
+    try { applyPoi(preferences.poi); appliedPoi = preferences.poi; }
+    catch {
+      try { applyPoi(appliedPoi); preferences.poi = appliedPoi; }
+      catch { poiControlDisabled = true; }
+      preferenceStatus.textContent = "POI 套用失敗";
+    }
+    try { applyScale(preferences.scale); appliedScale = preferences.scale; }
+    catch {
+      try { applyScale(appliedScale); preferences.scale = appliedScale; }
+      catch { scaleControlDisabled = true; }
+      preferenceStatus.textContent = "模型比例套用失敗";
+    }
+    updateControls();
+  }
+  poiButton.addEventListener("click", () => {
+    const previous = preferences.poi;
+    try { applyPoi(!previous); appliedPoi = !previous; preferences.poi = !previous; updateControls(); savePreferences(); }
+    catch (error) {
+      try { applyPoi(previous); appliedPoi = previous; preferences.poi = previous; }
+      catch { poiControlDisabled = true; }
+      preferenceStatus.textContent = "POI 套用失敗"; updateControls(); status(error.message);
+    }
+  });
+  scaleInput.addEventListener("input", () => {
+    const previous = preferences.scale; const next = Number(scaleInput.value);
+    try { applyScale(next); appliedScale = next; preferences.scale = next; updateControls(); savePreferences(); }
+    catch (error) {
+      try { applyScale(previous); appliedScale = previous; preferences.scale = previous; }
+      catch { scaleControlDisabled = true; }
+      preferenceStatus.textContent = "模型比例套用失敗"; updateControls(); status(error.message);
+    }
+  });
+  window.addEventListener("storage", event => {
+    if (event.key !== preferenceKey) return;
+    preferences = readPreferences(preferenceKey); updateControls(); applyLoadedPreferences();
+  });
+  map.on("style.load", applyLoadedPreferences);
+  applyLoadedPreferences();
   function place(model, vehicle) {
     model.setCoordinates([...vehicle.position, 0]);
     // 沿用已查驗的模型基準與 SDK 零度處理。
@@ -58,12 +144,18 @@ export async function createVehicleMap(vehicles, status, { center, onPick } = {}
     try {
       const loading = map.three.add3dModel({
         id: vehicle.id, obj: MODEL_URL, type: "gltf", coordinates: [...vehicle.position, 0],
-        rotation: { ...INITIAL_ROTATION }, scale: 10, anchor: "bottom",
+        rotation: { ...INITIAL_ROTATION }, scale: MODEL_INITIAL_SCALE, anchor: "bottom",
       }).then(model => { if (expired) map.three.remove3dObject(model); return model; });
       const model = await withTimeout(loading, 45000, `模型載入逾時：${vehicle.id}`);
       if (!latest.has(vehicle.id)) { map.three.remove3dObject(model); return; }
-      models.set(vehicle.id, model); place(model, latest.get(vehicle.id)); map.redraw();
-    } catch (error) { expired = true; throw error; }
+      place(model, latest.get(vehicle.id)); model.setScale(modelScale(preferences.scale));
+      models.set(vehicle.id, model); map.redraw();
+    } catch (error) {
+      expired = true;
+      const partial = models.get(vehicle.id);
+      if (partial) { models.delete(vehicle.id); map.three.remove3dObject(partial); }
+      throw error;
+    }
     finally { pending.delete(vehicle.id); }
   }
   for (const vehicle of fleet) latest.set(vehicle.id, vehicle);
@@ -102,6 +194,21 @@ export async function createVehicleMap(vehicles, status, { center, onPick } = {}
         addLine(task.pickup_route.coordinates, "#2696eb", "pickup-route");
         addLine(task.transport_route.coordinates, "#e39428", "transport-route");
         addMarker(task.pickup, "上", "origin"); addMarker(task.destination, "下", "destination"); map.redraw();
+      } catch (error) { clearRoute(); throw error; }
+    },
+    showPassengerTrip(task, request, frame = false) {
+      clearRoute();
+      try {
+        const isTransport = task.phase === "transport" || task.phase === "completed";
+        const route = isTransport ? task.transport_route : task.pickup_route;
+        if (route?.coordinates) addLine(route.coordinates, isTransport ? "#e39428" : "#2696eb", "passenger-route");
+        addMarker(request.pickup, "上", "origin"); addMarker(request.destination, "下", "destination");
+        if (frame && route?.coordinates?.length) {
+          const points = [...route.coordinates, request.pickup, request.destination];
+          map.setPitch(0);
+          map.fitBounds([[Math.min(...points.map(p => p[0])), Math.min(...points.map(p => p[1]))], [Math.max(...points.map(p => p[0])), Math.max(...points.map(p => p[1]))]], { padding: 60 });
+        }
+        map.redraw();
       } catch (error) { clearRoute(); throw error; }
     },
     showRoute(route) {

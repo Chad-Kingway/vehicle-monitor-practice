@@ -1,5 +1,8 @@
 import asyncio
+import json
+import os
 import random
+import tempfile
 from datetime import datetime, timezone
 from time import monotonic
 from uuid import uuid4
@@ -20,6 +23,7 @@ class Simulation:
         self.requests = {}
         self.tasks = {}
         self.idempotency = {}
+        self.random_request_intents = {}
         self.jobs = set()
         self.clocks = {}
         self.vehicles = {item.id: {**item.model_dump(), 'position': item.initial_position, 'heading': item.initial_heading, 'last_report_at': None, 'task_id': None, 'diagnostic': False} for item in settings.vehicles}
@@ -46,7 +50,10 @@ class Simulation:
         return {'run_id': self.run_id, 'settings': self.settings, 'vehicles': [self.vehicle_view(item) for item in self.vehicles.values()], 'requests': [self.request_view(item) for item in self.requests.values()], 'tasks': [self.task_view(item) for item in self.tasks.values()]}
 
     def passenger_requests(self, passenger_id):
-        return {'run_id': self.run_id, 'requests': [self.request_view(item) for item in self.requests.values() if item['passenger_id'] == passenger_id]}
+        requests = [item for item in self.requests.values() if item['passenger_id'] == passenger_id]
+        active = [item for item in requests if item['status'] not in ('completed', 'failed', 'cancelled')]
+        current = max(active or requests, key=lambda item: item['sequence'], default=None)
+        return {'run_id': self.run_id, 'requests': [self.request_view(current)] if current else []}
 
     def vehicle_command(self, vehicle_id):
         vehicle = self.vehicles.get(vehicle_id)
@@ -58,6 +65,34 @@ class Simulation:
     async def set_speed(self, multiplier):
         async with self.lock:
             self.settings = self.settings.model_copy(update={'speed_multiplier': multiplier})
+            return {'run_id': self.run_id, 'settings': self.settings}
+
+    async def set_intervals(self, report_interval, poll_interval, config_path):
+        async with self.lock:
+            if report_interval >= self.settings.offline_threshold_seconds:
+                raise HTTPException(422, '車輛回報間隔必須小於離線門檻。')
+            updated = self.settings.model_copy(update={
+                'report_interval_seconds': report_interval,
+                'poll_interval_seconds': poll_interval,
+            })
+            try:
+                content = json.loads(config_path.read_text(encoding='utf-8'))
+                content['report_interval_seconds'] = report_interval
+                content['poll_interval_seconds'] = poll_interval
+                temporary = None
+                with tempfile.NamedTemporaryFile('w', encoding='utf-8', dir=config_path.parent, delete=False) as file:
+                    temporary = file.name
+                    json.dump(content, file, ensure_ascii=False, indent=2)
+                    file.write('\n')
+                os.replace(temporary, config_path)
+            except (OSError, ValueError, TypeError) as error:
+                if 'temporary' in locals() and temporary and os.path.exists(temporary):
+                    try:
+                        os.unlink(temporary)
+                    except OSError:
+                        pass
+                raise HTTPException(500, '設定保存失敗，原設定未變更。') from error
+            self.settings = updated
             return {'run_id': self.run_id, 'settings': self.settings}
 
     def dispatch(self):
@@ -107,6 +142,8 @@ class Simulation:
             return existing if existing is not None else self.create_request_locked(data, key)
 
     def create_request_locked(self, data, key):
+        if any(item['passenger_id'] == data.passenger_id and item['status'] not in ('completed', 'failed', 'cancelled') for item in self.requests.values()):
+            raise HTTPException(409, '已有尚未結束的乘車請求。')
         if data.passenger_count > max(item['passenger_capacity'] for item in self.vehicles.values()):
             raise HTTPException(422, '乘車人數超過車隊最大載客上限。')
         request = {**data.model_dump(), 'id': str(uuid4()), 'sequence': len(self.requests) + 1, 'status': 'waiting', 'task_id': None, 'vehicle_id': None, 'failure_reason': None, 'created_at': datetime.now(timezone.utc)}
@@ -123,12 +160,22 @@ class Simulation:
             if existing is not None:
                 return existing
             bounds = self.settings.random_requests
-            for _ in range(bounds.max_attempts):
-                pickup = (random.uniform(bounds.longitude_min, bounds.longitude_max), random.uniform(bounds.latitude_min, bounds.latitude_max))
-                destination = (random.uniform(bounds.longitude_min, bounds.longitude_max), random.uniform(bounds.latitude_min, bounds.latitude_max))
-                if distance_meters(pickup, destination) >= bounds.minimum_distance_meters:
-                    return self.create_request_locked(RideRequestInput(**data.model_dump(), pickup=pickup, destination=destination, passenger_count=random.randint(1, max(item['passenger_capacity'] for item in self.vehicles.values()))), key)
-            raise HTTPException(422, '隨機起訖抽樣已達上限，未提出乘車請求。')
+            if any(item['passenger_id'] == data.passenger_id and item['status'] not in ('completed', 'failed', 'cancelled') for item in self.requests.values()):
+                raise HTTPException(409, '已有尚未結束的乘車請求。')
+            intent = self.random_request_intents.get(key) if key else None
+            if intent is None:
+                for _ in range(bounds.max_attempts):
+                    pickup = (random.uniform(bounds.longitude_min, bounds.longitude_max), random.uniform(bounds.latitude_min, bounds.latitude_max))
+                    destination = (random.uniform(bounds.longitude_min, bounds.longitude_max), random.uniform(bounds.latitude_min, bounds.latitude_max))
+                    if distance_meters(pickup, destination) >= bounds.minimum_distance_meters:
+                        intent = (pickup, destination, random.randint(1, max(item['passenger_capacity'] for item in self.vehicles.values())))
+                        if key:
+                            self.random_request_intents[key] = intent
+                        break
+                if intent is None:
+                    raise HTTPException(422, '隨機起訖抽樣已達上限，未提出乘車請求。')
+            pickup, destination, passenger_count = intent
+            return self.create_request_locked(RideRequestInput(**data.model_dump(), pickup=pickup, destination=destination, passenger_count=passenger_count), key)
 
     async def cancel(self, request_id, passenger_id):
         async with self.lock:

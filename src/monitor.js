@@ -31,6 +31,36 @@ export function mountMonitor() {
   speedLabel.append(speedInput, speedValue);
   const speedStatus = element("p"); speedStatus.setAttribute("role", "status");
   speedForm.append(speedLabel, speedStatus); document.querySelector(".settings").before(speedForm);
+  const intervalForm = element("form", undefined, "interval-form");
+  const reportLabel = element("label", "車輛回報間隔（秒）");
+  const reportInput = document.createElement("input"); reportInput.type = "number"; reportInput.min = "0.1"; reportInput.max = "60"; reportInput.step = "0.05"; reportInput.required = true;
+  reportLabel.append(reportInput);
+  const pollLabel = element("label", "網頁更新間隔（秒）");
+  const pollInput = document.createElement("input"); pollInput.type = "number"; pollInput.min = "0.1"; pollInput.max = "60"; pollInput.step = "0.05"; pollInput.required = true;
+  pollLabel.append(pollInput);
+  const intervalButton = element("button", "儲存設定"); intervalButton.type = "submit";
+  const intervalStatus = element("p"); intervalStatus.setAttribute("role", "status");
+  intervalForm.append(reportLabel, pollLabel, intervalButton, intervalStatus);
+  document.querySelector(".settings").before(intervalForm);
+  let intervalConfirmed = { report: 0.25, poll: 0.25 };
+  intervalForm.addEventListener("submit", async event => {
+    event.preventDefault(); intervalButton.disabled = true;
+    try {
+      const data = await api("/api/simulation/intervals", { method: "PUT", body: {
+        report_interval_seconds: Number(reportInput.value), poll_interval_seconds: Number(pollInput.value),
+      } });
+      intervalConfirmed = { report: data.settings.report_interval_seconds, poll: data.settings.poll_interval_seconds };
+      reportInput.value = intervalConfirmed.report; pollInput.value = intervalConfirmed.poll;
+      intervalStatus.textContent = "已儲存設定";
+    } catch (error) {
+      intervalStatus.textContent = error.message;
+      try {
+        const data = await api("/api/simulation");
+        intervalConfirmed = { report: data.settings.report_interval_seconds, poll: data.settings.poll_interval_seconds };
+        reportInput.value = intervalConfirmed.report; pollInput.value = intervalConfirmed.poll;
+      } catch { reportInput.value = intervalConfirmed.report; pollInput.value = intervalConfirmed.poll; }
+    } finally { intervalButton.disabled = false; }
+  });
   let speedConfirmed = 60;
   let speedLastSentAt = 0;
   let speedTimer;
@@ -132,6 +162,10 @@ export function mountMonitor() {
     }
     byId("report-interval").textContent = `${data.settings.report_interval_seconds} 秒`;
     byId("poll-interval").textContent = `${data.settings.poll_interval_seconds} 秒`;
+    intervalConfirmed = { report: data.settings.report_interval_seconds, poll: data.settings.poll_interval_seconds };
+    if (document.activeElement !== reportInput && document.activeElement !== pollInput && !intervalButton.disabled) {
+      reportInput.value = intervalConfirmed.report; pollInput.value = intervalConfirmed.poll;
+    }
     byId("run-id").textContent = data.run_id.slice(0, 8); byId("run-id").title = data.run_id;
     if (mapView) {
       try { mapView.updateFleet(data.vehicles); renderSelection(); } catch (error) { mapError(error); }
