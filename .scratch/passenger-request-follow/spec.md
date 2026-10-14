@@ -1,4 +1,4 @@
-Status: awaiting-validation
+Status: completed
 
 ## 問題陳述
 
