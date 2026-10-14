@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 8 課：Server 啟動與關閉時做什麼？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 08</div><h1>Server 啟動與關閉時做什麼？</h1><p class="subtitle">讀懂 <code>lifespan</code>：共享資源何時建立、何時清理。</p></header>
+<article>
+<h2><code>lifespan</code> 包住整個服務期間</h2>
+<p><a href="../server/app.py"><code>server/app.py</code></a> 定義 <code>lifespan</code>，並傳給 <code>FastAPI(..., lifespan=lifespan)</code>。FastAPI 會在開始收請求前進入它；服務結束時，再執行清理部分。</p>
+
+<h2>看 <code>yield</code> 前後的順序</h2>
+<div class="callout"><strong>先記住三段：</strong><code>yield</code> 前 = 啟動準備；停在 <code>yield</code> = 正常接收請求；離開 <code>yield</code> 後 = 關閉清理。</div>
+<ol>
+<li><strong>啟動準備：</strong>讀設定，建立 HTTP client、RoutePlanner 和 Simulation，並將共用物件放到 <code>app.state</code>。</li>
+<li><strong>接收請求：</strong>執行到 <code>yield</code> 後，FastAPI 開始服務；API handler 可以讀取 <code>app.state.simulation</code>。</li>
+<li><strong>關閉清理：</strong>Server 停止服務後，程式從 <code>yield</code> 後繼續，呼叫 <code>await simulation.close()</code>；離開 <code>async with</code> 時，HTTP client 也會關閉。</li>
+</ol>
+<pre><code>@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 啟動：建立共享資源
+    async with httpx.AsyncClient(...) as client:
+        simulation = Simulation(settings, planner)
+        app.state.simulation = simulation
+        try:
+            yield  # FastAPI 在這段期間接收請求
+        finally:
+            await simulation.close()  # 關閉時清理</code></pre>
+<p>實際程式還會讀設定和建立 RoutePlanner。這個生命週期讓每個 request 重用同一個 Simulation 和 HTTP client，避免每次請求都重新建立。</p>
+
+<section class="exercise"><h2>小練習</h2><p><code>app.state.simulation = simulation</code> 發生在 <code>yield</code> 前。為什麼這很重要？</p><p>提示：FastAPI 要先完成啟動準備，才會開始呼叫 API handler。</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://fastapi.tiangolo.com/advanced/events/">FastAPI 官方：Lifespan Events</a> — 看 <code>yield</code> 前是 startup、後是 shutdown，以及 lifespan 用於管理共享資源。</p><p>程式位置：<a href="../server/app.py">server/app.py</a>。速查：<a href="../reference/server-python-map.html">Server Python 檔案地圖</a>。</p>
+</article><footer>後續可以用同一個讀法理解其他生命週期資源，例如路線查詢 client、背景工作與設定載入。</footer>
+</main></body></html>

@@ -12,6 +12,8 @@
   說明如何把 CSS 套用至 HTML，並用選擇器指定元素。用於閱讀 `src/style.css` 與調整 UI 外觀。
 - [MDN: Making network requests with JavaScript](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Network_requests)
   說明瀏覽器如何用網路請求取得資料。用於理解前端和 Server 的 HTTP 交換。
+- [FastAPI: Lifespan Events](https://fastapi.tiangolo.com/advanced/events/)
+  說明 startup、yield 與 shutdown 如何管理應用程式共用資源。用於閱讀 `server/app.py` 的 lifespan。
 - [FastAPI: First Steps（繁體中文）](https://fastapi.tiangolo.com/zh-hant/tutorial/first-steps/)
   說明 FastAPI 路徑裝飾器如何把 HTTP 請求交給其下方的函式。用於閱讀 `server/app.py`。
 - [Python 官方教學：類別與方法](https://docs.python.org/3/tutorial/classes.html)
