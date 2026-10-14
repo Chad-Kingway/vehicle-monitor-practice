@@ -3,8 +3,7 @@
 ## Knowledge
 
 - [Vite: Getting Started](https://vite.dev/guide/)
-  說明 Vite 開發伺服器與 `index.html` 入口。用於追蹤這個專案如何由 
-pm run dev` 提供網頁。
+  說明 Vite 開發伺服器與 `index.html` 入口。用於追蹤這個專案如何由 `npm run dev` 提供網頁。
 - [MDN: `<script>` 元素](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script)
   說明 HTML 如何載入 JavaScript，以及 module script 的基本行為。用於讀懂 `index.html` 的 `<script type="module">`。
 - [MDN: JavaScript modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)
