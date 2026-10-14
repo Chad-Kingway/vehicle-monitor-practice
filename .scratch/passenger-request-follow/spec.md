@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: awaiting-validation
 
 ## 問題陳述
 
