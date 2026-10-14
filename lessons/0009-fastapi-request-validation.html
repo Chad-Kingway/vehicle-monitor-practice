@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 9 課：FastAPI 如何驗證收到的資料？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 09</div><h1>FastAPI 如何驗證收到的資料？</h1><p class="subtitle">從 API 參數的型別追到 <code>schemas.py</code> 的規則。</p></header>
+<article>
+<h2>路由參數標示資料模型</h2>
+<p><a href="../server/app.py"><code>server/app.py</code></a> 裡的建立乘車請求路由長這樣：</p>
+<pre><code>@app.post('/api/requests')
+async def submit_request(data: RideRequestInput):
+    return await app.state.simulation.submit(data)</code></pre>
+<p><code>data: RideRequestInput</code> 不只是型別提示。FastAPI 會把 HTTP request body 的 JSON 讀出來，依 <code>RideRequestInput</code> 解析與驗證，通過後才呼叫 <code>submit_request</code>。模型不符合規則時，handler 不會開始執行。</p>
+
+<h2>模型描述欄位與限制</h2>
+<p><a href="../server/schemas.py"><code>server/schemas.py</code></a> 定義它：</p>
+<pre><code>class RideRequestInput(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    passenger_id: Identity
+    pickup: Position
+    destination: Position
+    passenger_count: int = Field(ge=1, strict=True)</code></pre>
+<ul>
+<li><code>passenger_id</code>、<code>pickup</code>、<code>destination</code> 和 <code>passenger_count</code> 都沒有預設值，所以都是必要欄位。</li>
+<li><code>passenger_count</code> 必須是整數，且至少為 1；<code>strict=True</code> 表示不把字串 <code>"2"</code> 自動轉成整數。</li>
+<li><code>extra='forbid'</code> 表示拒絕模型未宣告的多餘欄位。</li>
+</ul>
+<p><code>pickup</code> 和 <code>destination</code> 的型別是 <code>Position</code>，它又由經度、緯度規則組成。這就是為什麼欄位限制可以分層重用。</p>
+<div class="callout"><strong>資料流：</strong>HTTP JSON → FastAPI 讀取 body → Pydantic 依模型驗證 → 建立 <code>RideRequestInput</code> → 呼叫 <code>submit_request(data)</code>。</div>
+
+<section class="exercise"><h2>小練習</h2><p>如果乘車請求少了 <code>passenger_count</code>，或把人數傳成 <code>0</code>，程式會進入 <code>submit_request</code> 嗎？簡單說明原因。</p><p>提示：檢查欄位有沒有預設值，以及 <code>Field(ge=1)</code> 的意思。</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://fastapi.tiangolo.com/tutorial/body/">FastAPI 官方：Request Body</a> — 看參數宣告 Pydantic model 時，FastAPI 如何把 JSON body 解析成 model。</p><p>欄位限制：<a href="https://fastapi.tiangolo.com/tutorial/body-fields/">FastAPI 官方：Body Fields</a>。速查：<a href="../reference/python-request-schema.html">乘車請求輸入模型</a>。</p>
+</article><footer>下一步可以追模型驗證通過後，<code>Simulation.submit()</code> 如何改變伺服器狀態。</footer>
+</main></body></html>

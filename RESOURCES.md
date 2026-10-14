@@ -32,3 +32,7 @@
   說明如何把 async generator 包成非同步 context manager，搭配 `yield` 控制建立與清理資源。
 - [Python 3.12: Dictionary displays](https://docs.python.org/3.12/reference/expressions.html#dictionary-displays)
   說明字典中的 `**mapping` 如何展開鍵值，以及重複鍵由較後方的值覆蓋。
+- [FastAPI: Request Body](https://fastapi.tiangolo.com/tutorial/body/)
+  說明以 Pydantic model 型別作為 API 參數時，FastAPI 如何解析與驗證 JSON request body。
+- [FastAPI: Body Fields](https://fastapi.tiangolo.com/tutorial/body-fields/)
+  說明如何用 Pydantic `Field` 加上欄位驗證條件與 metadata。
