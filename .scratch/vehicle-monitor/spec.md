@@ -214,7 +214,7 @@ Approval: confirmed
 | 永久失聯 | 結束 Client 或持續阻斷連線，原任務保持待確認，直到操作者重啟整場模擬 |
 | Server 重啟與隔離 | 重啟 Server 與相關 Client，舊資料清空、車回初始位置；重送上一輪結果不得更新新輪次 |
 
-暫時斷線驗收須只阻斷 HTTP，保持 Server 與 Client 程序存活；直接停止並重啟 Server 會開始新一輪，不能驗證同一輪斷線。第一版按預設三台車驗收，以上應用程式驗收目前尚未執行。
+暫時斷線驗收須只阻斷 HTTP，保持 Server 與 Client 程序存活；直接停止並重啟 Server 會開始新一輪，不能驗證同一輪斷線。第一版按預設三台車驗收，2026-10-13 HTTP／程序驗收及 2026-10-14 瀏覽器補驗結果見 `docs/manual-acceptance.md`；官方帳戶限制查核仍待確認。
 
 ## 範圍外（Out of Scope）
 
@@ -278,3 +278,5 @@ Approval: confirmed
 - to-spec：依已確認討論整理問題、解決方案、使用者故事、實作決策、驗證決策與範圍外事項；保留共同理解確認，發布為 ready-for-agent。
 
 - 2026-10-13 implement-spec：03～13 功能已實作並合併至 `codex/vehicle-monitor-integration`。真實道路接送、限量生成、斷線恢復與輪次隔離已完成 HTTP／程序驗收；網頁操作、多模型獨立性及帳戶配額仍待查核，任務 14 保留 awaiting-validation。完整紀錄見 `docs/manual-acceptance.md`。
+
+- 2026-10-14 implement-spec：已補驗多乘客連結、刷新保存身分、地圖選點、隨機／取消、三車同 URL 模型、列表／定位／跟隨、調速、監控關閉／重開與同輪網頁斷線恢復；三車完成第一趟，vehicle-03 完成第二趟。新增乘客入口自動開新分頁亦已確認；03、04、05、06、08、09、12 改為 done。使用者表示 ACCESS_KEY／ACCESS_TOKEN 可無限使用，但 ROUTES_API_KEY 的官方方案、每日配額與頻率限制仍缺證據。14 與規格維持 awaiting-validation，詳見 docs/manual-acceptance.md。

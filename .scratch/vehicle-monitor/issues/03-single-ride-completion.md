@@ -1,6 +1,6 @@
 # 03：單筆乘車請求完成接送
 
-Status: awaiting-validation
+Status: done
 Blocked by: 02：官方道路路線取得與顯示
 
 ## 交付行為
@@ -31,3 +31,5 @@ Blocked by: 02：官方道路路線取得與顯示
 
 - 使用者已確認 14 張任務的拆分粒度與依賴關係；依 to-tickets 發布本張。狀態 ready-for-agent 表示內容已具體化，仍須先完成 Blocked by 所列任務。
 - 2026-10-13：功能已合併至 `codex/vehicle-monitor-integration`；HTTP 與 Python 程序驗收結果、重現方式及限制見 `docs/manual-acceptance.md`。程式已實作；實際網頁操作／多模型或完整展示仍待人工驗收，因此保留 awaiting-validation，不宣稱整張完成。
+
+- 2026-10-14：已補齊實際瀏覽器操作與三車展示驗收，狀態改為 done；操作與觀察結果見 docs/manual-acceptance.md 的當日補驗紀錄，保留前一日 HTTP／程序驗收證據。

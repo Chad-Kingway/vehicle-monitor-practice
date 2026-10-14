@@ -1,6 +1,6 @@
 # 12：網頁與生成器的斷線恢復
 
-Status: awaiting-validation
+Status: done
 Blocked by: 05：多乘客身分與等待請求取消；07：限量自動生成乘車請求
 
 ## 交付行為
@@ -9,8 +9,8 @@ Blocked by: 05：多乘客身分與等待請求取消；07：限量自動生成�
 
 ## 驗收條件
 
-- [ ] 監控與乘客網頁斷線保持最後資料，不誤認為資料仍即時更新。
-- [ ] 恢復後繼續讀取 Server 狀態並保留乘客原身分。
+- [x] 監控與乘客網頁斷線保持最後資料，不誤認為資料仍即時更新。
+- [x] 恢復後繼續讀取 Server 狀態並保留乘客原身分。
 - [x] 生成器暫停，恢復不集中補發且維持剩餘筆數，間隔仍使用真實時間。
 - [x] 以 HTTP 中斷驗證，不重啟 Server。
 
@@ -30,3 +30,5 @@ Blocked by: 05：多乘客身分與等待請求取消；07：限量自動生成�
 
 - 使用者已確認 14 張任務的拆分粒度與依賴關係；依 to-tickets 發布本張。狀態 ready-for-agent 表示內容已具體化，仍須先完成 Blocked by 所列任務。
 - 2026-10-13：功能已合併至 `codex/vehicle-monitor-integration`；HTTP 與 Python 程序驗收結果、重現方式及限制見 `docs/manual-acceptance.md`。程式已實作；實際網頁操作／多模型或完整展示仍待人工驗收，因此保留 awaiting-validation，不宣稱整張完成。
+
+- 2026-10-14：已補齊實際瀏覽器操作與三車展示驗收，狀態改為 done；操作與觀察結果見 docs/manual-acceptance.md 的當日補驗紀錄，保留前一日 HTTP／程序驗收證據。

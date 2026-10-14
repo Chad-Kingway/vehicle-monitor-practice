@@ -1,6 +1,6 @@
 # 05：多乘客身分與等待請求取消
 
-Status: awaiting-validation
+Status: done
 Blocked by: 03：單筆乘車請求完成接送
 
 ## 交付行為
@@ -9,7 +9,7 @@ Blocked by: 03：單筆乘車請求完成接送
 
 ## 驗收條件
 
-- [ ] 免登入、多頁不同乘客，重新整理保持該頁原身分。
+- [x] 免登入、多頁不同乘客，重新整理保持該頁原身分。
 - [x] 每位乘客可查看自己的請求並取消等待中的請求。
 - [x] 規劃開始後拒絕取消；取消與派車交錯時不出現已取消仍接送。
 - [x] 人工驗收以單車忙碌造成等待即可，不依賴完整三車功能。
@@ -30,3 +30,5 @@ Blocked by: 03：單筆乘車請求完成接送
 
 - 使用者已確認 14 張任務的拆分粒度與依賴關係；依 to-tickets 發布本張。狀態 ready-for-agent 表示內容已具體化，仍須先完成 Blocked by 所列任務。
 - 2026-10-13：功能已合併至 `codex/vehicle-monitor-integration`；HTTP 與 Python 程序驗收結果、重現方式及限制見 `docs/manual-acceptance.md`。程式已實作；實際網頁操作／多模型或完整展示仍待人工驗收，因此保留 awaiting-validation，不宣稱整張完成。
+
+- 2026-10-14：直接點擊新增乘客入口，已確認自動開啟兩個不同 UUID 乘客分頁，各自請求正確；刷新保存身分與等待取消已實測，狀態改為 done。詳見 docs/manual-acceptance.md。
