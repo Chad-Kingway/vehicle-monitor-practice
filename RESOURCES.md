@@ -8,6 +8,8 @@
   說明 HTML 如何載入 JavaScript，以及 module script 的基本行為。用於讀懂 `index.html` 的 `<script type="module">`。
 - [MDN: JavaScript modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)
   說明 `import` / `export` 如何拆分程式。用於沿著 `src/main.js` 找到前端功能模組。
+- [MDN: `Crypto.randomUUID()`](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/randomUUID)
+  說明瀏覽器如何產生 v4 UUID。用於讀懂乘客端替每次新請求建立 `client_request_id` 的程式。
 - [MDN: Getting started with CSS](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Getting_started)
   說明如何把 CSS 套用至 HTML，並用選擇器指定元素。用於閱讀 `src/style.css` 與調整 UI 外觀。
 - [MDN: Making network requests with JavaScript](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Network_requests)

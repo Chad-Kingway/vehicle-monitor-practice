@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 12 課：重送請求時如何避免重複建立？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 12</div><h1>重送請求時如何避免重複建立？</h1><p class="subtitle">追蹤乘客端的 <code>client_request_id</code> 如何讓 Server 認出同一筆送出。</p></header>
+<article>
+<h2>乘客端先為這次送出建立識別碼</h2>
+<p><a href="../src/passenger.js"><code>send()</code></a> 建立 payload 時會產生 <code>client_request_id</code>，並把包含此 ID 的待送資料保存起來：</p>
+<pre><code>const payload = {
+  passenger_id: passengerId,
+  run_id: runId,
+  client_request_id: crypto.randomUUID(),
+  ...(isRandom ? {} : { pickup, destination, passenger_count: Number(count.value) })
+};
+const pending = { run_id: runId, endpoint: isRandom ? "/api/requests/random" : "/api/requests", payload };
+storePending(pending);</code></pre>
+<p>如果送出結果不確定，前端之後重送保存的 payload，因此沿用同一個 ID。它不會把這次重試當成一筆全新的操作。</p>
+
+<h2>Server 用乘客與請求 ID 查找舊結果</h2>
+<p><a href="../server/simulation.py"><code>Simulation.submission_identity()</code></a> 將 <code>(passenger_id, client_request_id)</code> 當作查找鍵。若 <code>self.idempotency</code> 已記錄這個鍵，就取出原本的 request，<code>submit()</code> 直接回傳該 request view，不再建立第二筆。</p>
+<pre><code>key = (data.passenger_id, data.client_request_id)
+existing_id = self.idempotency.get(key)
+existing = self.request_view(self.requests[existing_id]) if existing_id else None
+
+# submit() 裡
+return existing if existing is not None else self.create_request_locked(data, key)</code></pre>
+<p>第一次成功建立請求時，Server 會把識別鍵記到 <code>self.idempotency</code>，並連到新 request 的 ID。這樣即使第一次回應在網路途中遺失，使用相同 payload 重送時仍能取回原結果。</p>
+<div class="callout"><strong>辨認重試：</strong>相同乘客 + 相同 <code>client_request_id</code> → 回傳原請求；不同 ID → 視為新的送出嘗試。</div>
+<p><code>crypto.randomUUID()</code> 產生 UUID 字串；這裡用它為每次新的乘車送出建立識別碼。MDN 說明 <code>randomUUID()</code> 會產生 v4 UUID。</p>
+
+<section class="exercise"><h2>小練習</h2><p>第一次送出的 HTTP 回應遺失，前端用原本保存的 payload 重送。Server 找到相同的乘客 ID 和 <code>client_request_id</code> 時，會建立新 request，還是回傳原本那筆？</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://developer.mozilla.org/en-US/docs/Web/API/Crypto/randomUUID">MDN：<code>Crypto.randomUUID()</code></a> — 看前端如何產生 UUID。專案流程：<a href="../src/passenger.js">passenger.js 的送出與重試</a>、<a href="../server/simulation.py">simulation.py 的識別與去重</a>。</p><p>速查：<a href="../reference/request-retry-idempotency.html">請求重送與去重流程</a>。</p>
+</article><footer><a href="0011-simulation-async-lock.html">回顧第 11 課：Simulation 的共享鎖</a></footer>
+</main></body></html>

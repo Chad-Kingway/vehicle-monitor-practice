@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：請求重送與去重流程</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>請求重送與去重流程</h1><article>
+<h2>乘客端</h2>
+<ol><li>新送出時，用 <code>crypto.randomUUID()</code> 建立 <code>client_request_id</code>。</li><li>將完整 payload 保存在 pending request 中，再發送 HTTP POST。</li><li>結果不確定時，重用保存的 payload，因此仍使用原本的 ID。</li></ol>
+<h2>Server</h2>
+<ul><li>以 <code>(passenger_id, client_request_id)</code> 查詢 <code>self.idempotency</code>。</li><li>找到舊 request：回傳原 request view。</li><li>找不到：建立新 request，再記錄這個鍵對應的 request ID。</li></ul>
+<p>這個識別機制用來把同一次送出和它的重試連起來。乘客 ID 也在鍵裡，因此不同乘客可以各自使用相同字串的 request ID。</p>
+<p><a href="../lessons/0012-retry-request-idempotency.html">第 12 課：重送請求時如何避免重複建立？</a> · <a href="../src/passenger.js">passenger.js</a> · <a href="../server/simulation.py">simulation.py</a></p>
+</article></main></body></html>
