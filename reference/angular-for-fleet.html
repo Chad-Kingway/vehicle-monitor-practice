@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：車隊清單範本</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>車隊清單範本</h1><article>
+<pre><code>@for (vehicle of fleet(); track vehicle.id) {
+  &lt;button&gt;{{ vehicle.id }}&lt;/button&gt;
+}</code></pre>
+<ul><li><code>fleet()</code>：目前要顯示的車輛清單。</li><li><code>@for</code>：每一台車建立一份範本。</li><li><code>vehicle.id</code>：目前這一列的車輛識別碼。</li><li><code>track vehicle.id</code>：清單更新時，以 ID 對應車輛及其畫面列。</li></ul>
+<p><a href="../lessons/0019-angular-for-renders-list.html">第 19 課：Angular 如何把車輛清單畫出來？</a> · <a href="../src/app/monitor.component.ts">MonitorComponent</a> · <a href="https://angular.dev/guide/templates/control-flow">Angular 官方 Control flow</a></p>
+</article></main></body></html>

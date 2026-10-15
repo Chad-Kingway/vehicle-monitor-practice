@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 19 課：Angular 如何把車輛清單畫出來？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 19</div><h1>Angular 如何把車輛清單畫出來？</h1><p class="subtitle">用一段 <code>@for</code> 範本，追蹤資料如何變成多個按鈕。</p></header>
+<article>
+<h2><code>@for</code> 讓 Angular 重複建立畫面</h2>
+<p><a href="../src/app/monitor.component.ts"><code>MonitorComponent</code></a> 用這段範本顯示車隊：</p>
+<pre><code>@for (vehicle of fleet(); track vehicle.id) {
+  &lt;button (click)="client.actions.selectVehicle(vehicle.id)"&gt;
+    {{ vehicle.id }}
+  &lt;/button&gt;
+}</code></pre>
+<p>用白話讀：Angular 取得 <code>fleet()</code> 的車輛清單；清單裡每有一台車，就建立一個按鈕。每個按鈕內的 <code>vehicle.id</code> 會顯示當下那台車的 ID。三台車就會有三個按鈕。</p>
+
+<h2><code>track vehicle.id</code> 是每列畫面的識別方式</h2>
+<p>監控頁會定期收到新資料，車輛清單也可能改變。<code>track vehicle.id</code> 告訴 Angular：「用車輛 ID 辨認這一列代表哪台車。」例如清單順序改變，Angular 可以依 ID 對應前後的車輛列，而不只看它排第幾個。若某個 ID 不在新清單中，那台車的按鈕也不再顯示。</p>
+<div class="callout"><strong>Angular 在這裡負責：</strong>依清單項目重複範本，並用 <code>track</code> 維持資料項目與畫面列的對應。</div>
+
+<section class="exercise"><h2>練習：推演清單更新</h2><p>第一次收到的清單是 <code>[vehicle-01, vehicle-02, vehicle-03]</code>；下一次收到 <code>[vehicle-03, vehicle-01]</code>。請回答：</p><ol><li>更新後畫面依序有哪些車輛按鈕？</li><li>哪個按鈕不再顯示？</li><li><code>track vehicle.id</code> 用什麼資料判斷兩次清單中的車輛是否同一台？</li></ol></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://angular.dev/guide/templates/control-flow">Angular 官方：Control flow</a> — 看 <code>@for</code> 與 <code>track</code> 怎麼維持資料和畫面項目的關係。速查：<a href="../reference/angular-for-fleet.html">本專案的車隊清單範本</a>。</p>
+</article><footer><a href="0018-angular-if-selects-component.html">回顧第 18 課：Angular 如何切換兩種畫面？</a> · 練習時可以逐台追 ID，不必背語法。</footer>
+</main></body></html>
