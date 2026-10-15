@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 17 課：讀懂在線車輛的篩選條件</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 17</div><h1>讀懂在線車輛的篩選條件</h1><p class="subtitle">分清「連線在線」和「正在執行接送任務」。</p></header>
+<article>
+<h2>先讀比較條件</h2>
+<p>監控元件裡有這個條件：</p>
+<pre><code>vehicle.connection_status === 'online'</code></pre>
+<p>把它唸成：「這台車的連線狀態，是否剛好等於 <code>online</code>？」答案只有是或否。<code>filter()</code> 會逐台檢查車輛，只留下條件為「是」的車。JavaScript 官方參考也說，filter 的判斷函式對每個項目執行，保留通過條件的項目。</p>
+<p>若你熟悉 Python，可以先把它想成：</p>
+<pre><code>[vehicle for vehicle in vehicles
+ if vehicle.connection_status == 'online']</code></pre>
+
+<h2>條件看的是連線狀態，不是接送任務</h2>
+<p>車輛資料裡有不同欄位。<code>connection_status</code> 表示車輛 Client 目前是否在線；<code>task_id</code> 表示車輛關聯的接送任務。這段篩選只檢查前者，所以有任務不代表在線，沒有任務也不代表離線。</p>
+<table><thead><tr><th>車輛</th><th>連線狀態</th><th>接送任務</th></tr></thead><tbody>
+<tr><td>A</td><td>online</td><td>無</td></tr><tr><td>B</td><td>offline</td><td>有</td></tr><tr><td>C</td><td>online</td><td>有</td></tr><tr><td>D</td><td>offline</td><td>無</td></tr>
+</tbody></table>
+<p>依照 <code>connection_status === 'online'</code>，留下 A、C。然後 <code>.length</code> 取得留下項目的數量，所以在線數是 2。這個數字再由 <code>{{ online() }}</code> 放進畫面。</p>
+<div class="callout"><strong>讀篩選程式：</strong>先找它檢查哪個欄位，再判斷哪些資料符合；不要用另一個欄位猜結果。</div>
+
+<section class="exercise"><h2>小練習</h2><p>再看表格：車輛 B 有接送任務，但連線狀態是 <code>offline</code>。它會被這段 <code>filter()</code> 留下嗎？請說明判斷依據，並列出最後留下的車輛代號。</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter">MDN：<code>Array.prototype.filter()</code></a> — 看條件函式怎樣決定保留哪些項目。</p><p>專案程式：<a href="../src/app/monitor.component.ts">MonitorComponent 的在線數計算</a> · 速查：<a href="../reference/angular-online-count.html">在線車輛數的計算</a></p>
+</article><footer><a href="0016-where-online-count-comes-from.html">回顧第 16 課：在線車輛數從哪裡來？</a> · 這次請回答「留不留、為什麼、留下誰」，不只答一個數字。</footer>
+</main></body></html>

@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：篩選在線車輛</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>篩選在線車輛</h1><article>
+<pre><code>vehicles.filter(vehicle =&gt;
+  vehicle.connection_status === 'online'
+)</code></pre>
+<ul><li><code>filter</code> 逐一檢查每台車。</li><li>等於 <code>online</code> 的車會保留。</li><li>有沒有 <code>task_id</code> 不影響這項判斷。</li><li><code>.length</code> 計算留下幾台。</li></ul>
+<p><a href="../lessons/0017-read-filter-condition.html">第 17 課：讀懂在線車輛的篩選條件</a> · <a href="../src/app/monitor.component.ts">MonitorComponent</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter">MDN filter()</a></p>
+</article></main></body></html>
