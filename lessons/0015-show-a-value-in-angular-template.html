@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 15 課：把一個數字放到 Angular 畫面</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 15</div><h1>把一個數字放到 Angular 畫面</h1><p class="subtitle">先看懂一小段畫面，不需要先學 Signal 或 Service。</p></header>
+<article>
+<h2>畫面上的內容可以來自程式資料</h2>
+<p>一般 HTML 可以直接寫死文字，例如 <code>&lt;p&gt;在線 2&lt;/p&gt;</code>。如果數字會變，就不想每次手動改 HTML。Angular 提供一個寫法：在雙大括號裡放要顯示的資料或計算結果。</p>
+<pre><code>&lt;p&gt;在線 {{ online() }}&lt;/p&gt;</code></pre>
+<p>把它想成「在線」後面留了一個位置給程式填。如果 <code>online()</code> 算出 <code>2</code>，畫面就會顯示「在線 2」。Angular 官方把這種雙大括號顯示文字的方式稱為 text interpolation（文字插值）。</p>
+
+<h2>在車輛監控裡找到它</h2>
+<p><a href="../src/app/monitor.component.ts"><code>MonitorComponent</code></a> 的範本有這一行：</p>
+<pre><code>&lt;span&gt;在線 {{ online() }}&lt;/span&gt;</code></pre>
+<p>這裡先只把 <code>online()</code> 當作一個會給出數字的程式；它怎麼算，我們之後再拆。這一課要記得的是：雙大括號裡的結果會出現在網頁文字中。</p>
+<div class="callout"><strong>先讀出這行：</strong>「在線」是固定文字；<code>{{ online() }}</code> 是由程式提供的部分。</div>
+
+<section class="exercise"><h2>小練習</h2><p>如果 <code>online()</code> 給出的數字是 <code>4</code>，畫面會顯示什麼？</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://angular.dev/guide/templates/binding">Angular 官方：Binding dynamic text</a> — 看雙大括號如何把程式結果放進範本文字。</p><p>速查：<a href="../reference/angular-template-text.html">Angular 範本文字速查</a> · 前一課：<a href="0014-signal-updates-the-ui.html">Signal 如何讓車隊數字更新？</a></p>
+</article><footer>可以先只回答練習的顯示文字。我們會從你熟悉的地方往下走，不急著背術語。</footer>
+</main></body></html>

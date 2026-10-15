@@ -8,6 +8,8 @@
   說明 service 如何被元件注入及共用。用於追蹤 SimulationService 和 ApiService。
 - [Angular 官方：Signals](https://angular.dev/guide/signals)
   說明 Signals 如何追蹤狀態的讀取者，以及 computed 如何依賴其他 Signals。用於理解本專案從 Server 快照更新到監控畫面的流程。
+- [Angular 官方：Binding dynamic text, properties and attributes](https://angular.dev/guide/templates/binding)
+  說明如何使用雙大括號把元件資料顯示在範本文字中。用於讀懂車隊摘要上的在線數字。
 - [Angular 官方：Making HTTP requests](https://angular.dev/guide/http)
   說明 Angular HttpClient 的請求流程。用於對照本專案 ApiService 與 FastAPI 的 HTTP 連線。
 - [Angular 官方：Serving applications for development](https://angular.dev/tools/cli/serve)
