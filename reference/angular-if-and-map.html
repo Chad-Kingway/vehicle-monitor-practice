@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：畫面分支與地圖位置</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>畫面分支與地圖位置</h1><article>
+<pre><code>@if (mode === 'monitor') {
+  &lt;app-monitor /&gt;
+} @else {
+  &lt;app-passenger /&gt;
+}
+
+&lt;!-- 位於條件區塊外 --&gt;
+&lt;div id="map"&gt;&lt;/div&gt;</code></pre>
+<ul><li>監控模式：Angular 顯示 MonitorComponent。</li><li>乘客模式：Angular 顯示 PassengerComponent。</li><li>地圖容器在條件區塊外，切換這兩個分支時仍保留。</li></ul>
+<p><a href="../lessons/0018-angular-if-selects-component.html">第 18 課：Angular 如何切換兩種畫面？</a> · <a href="../src/app/workspace.component.ts">WorkspaceComponent</a> · <a href="../docs/adr/0003-angular-frontend.md">ADR 0003：Angular 前端</a></p>
+</article></main></body></html>

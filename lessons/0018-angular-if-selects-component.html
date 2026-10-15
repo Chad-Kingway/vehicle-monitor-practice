@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 18 課：Angular 如何切換監控與乘客畫面？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 18</div><h1>Angular 如何切換兩種畫面？</h1><p class="subtitle">練習看 Angular 範本如何選擇要建立哪個畫面元件。</p></header>
+<article>
+<h2><code>@if</code> 讓 Angular 按條件顯示內容</h2>
+<p>Angular 範本中的 <code>@if</code> 和 <code>@else</code> 是畫面控制語法。條件成立時顯示第一個區塊，否則顯示另一個區塊。它不是一般 HTML 標籤，而是 Angular 讀取範本時會處理的指令。</p>
+<p><a href="../src/app/workspace.component.ts"><code>WorkspaceComponent</code></a> 用它選擇側欄內容：</p>
+<pre><code>@if (client.state().mode === 'monitor') {
+  &lt;app-monitor /&gt;
+} @else {
+  &lt;app-passenger /&gt;
+}</code></pre>
+<p><code>app-monitor</code> 對應監控畫面元件，<code>app-passenger</code> 對應乘客畫面元件。Angular 看目前條件，只建立並顯示其中一個區塊。這就是 Angular 在這裡做的事：依資料選擇頁面結構、建立對應的元件畫面。</p>
+
+<h2>地圖為什麼不跟著切掉？</h2>
+<p>同一個範本裡，地圖容器寫在這段 <code>@if</code> 之外：</p>
+<pre><code>&lt;main&gt;
+  &lt;aside&gt;
+    @if (...) { &lt;app-monitor /&gt; }
+    @else { &lt;app-passenger /&gt; }
+  &lt;/aside&gt;
+
+  &lt;section class="map-region"&gt;
+    &lt;div id="map"&gt;&lt;/div&gt;
+  &lt;/section&gt;
+&lt;/main&gt;</code></pre>
+<p>切換分支時，側欄會換成另一個元件；地圖區塊是旁邊獨立的內容，沒有被放進任一分支，因此仍留在頁面。這個結構讓工作區內切換畫面時可以繼續使用同一個地圖。</p>
+<div class="callout"><strong>Angular 範本讀法：</strong><code>@if</code> 選分支；分支裡的元件負責那塊畫面；放在分支外的內容不受這次選擇影響。</div>
+
+<section class="exercise"><h2>練習：追蹤範本結果</h2><p>現在條件變成乘客模式。請回答兩點：</p><ol><li>側欄顯示 <code>app-monitor</code> 還是 <code>app-passenger</code>？</li><li>這段切換會不會移除 <code>#map</code> 地圖容器？請用它在範本中的位置解釋。</li></ol></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://angular.dev/guide/templates/control-flow">Angular 官方：Control flow</a> — 說明 <code>@if</code> 如何依條件顯示範本內容。速查：<a href="../reference/angular-if-and-map.html">本專案的畫面分支與地圖位置</a>。</p>
+</article><footer><a href="0017-read-filter-condition.html">前一課：讀懂在線車輛的篩選條件</a> · 這次練習的是 Angular 範本，不是 JavaScript 陣列運算。</footer>
+</main></body></html>

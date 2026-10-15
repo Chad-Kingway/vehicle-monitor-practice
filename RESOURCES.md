@@ -10,6 +10,8 @@
   說明 Signals 如何追蹤狀態的讀取者，以及 computed 如何依賴其他 Signals。用於理解本專案從 Server 快照更新到監控畫面的流程。
 - [Angular 官方：Binding dynamic text, properties and attributes](https://angular.dev/guide/templates/binding)
   說明如何使用雙大括號把元件資料顯示在範本文字中。用於讀懂車隊摘要上的在線數字。
+- [Angular 官方：Control flow](https://angular.dev/guide/templates/control-flow)
+  說明 Angular 範本的 `@if` 與 `@for`。用於理解工作區如何按模式切換監控與乘客元件。
 - [MDN：Array.prototype.filter()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter)
   說明如何逐項檢查陣列並留下符合條件的資料。用於讀懂監控元件如何篩選在線車輛。
 - [Angular 官方：Making HTTP requests](https://angular.dev/guide/http)
