@@ -134,3 +134,22 @@ Angular 22 前端已實作，以 main 原版為畫面基準，整合搜尋、摘
 6. 複查 SimulationService 的輪次／操作競態及地圖清理；依結果修正並更新本紀錄與本機任務狀態。
 
 人工重現方式：依 README 啟動 Server、車輛 Client 與 npm run dev；從 main 開乘客頁，手動或座標選點送出，監控逐車定位／跟隨並操作設定，再以 ?route-check 查詢及清除路線。驗收代理與額外 8001 Server 僅供本輪檢查，收尾時移除；沒有修改 .env 或加入產品測試端點。
+
+## 2026-10-15 Angular 遷移待驗續驗
+
+沿用本機 Server 輪次 `b8b13d36` 與實際勤崴地圖；測試完成後將速度恢復 60×、兩項間隔恢復 1 秒。以短暫車隊 Client 完成接送後已停止 Client；Server 與 Angular 開發伺服器仍在原位。沒有修改 `.env` 或建立產品測試入口。
+
+| 項目 | 執行與觀察結果 |
+| --- | --- |
+| 結果不確定後刷新 | 乘客 `25c32863` 的送單結果在 Server 確認為單筆 `cd3d5562`。刷新後同一乘客頁恢復同一筆等待請求與「已確認目前請求」，未重送出第二筆。為清理本輪驗收資料，之後由該頁取消。 |
+| 速度拖動與間隔保存 | 監控滑桿由 60× 連續拖至 278×，頁面顯示已套用；再恢復 60×。把車輛回報／網頁更新間隔設為 0.2／0.3 秒並儲存，Server 設定回讀吻合，再恢復 1／1 秒。 |
+| 地圖偏好 | POI 切換及模型比例 31 重載後仍保留；再還原 POI 顯示及比例 30，重載確認還原。 |
+| 開發入口 | `/index.html` 正常載入；`/ui-template.html?passenger=…#hash` 導向 `/?passenger=…#hash`。`/dispatch.html?route-check` 開啟路線查詢則先前驗收已確認。 |
+| 開發 random | 以 `/index.html?passenger=0b501c01…&random=1` 建立隨機請求，頁面消耗 `random` 參數。刷新後 Server 仍只有一筆 `aa8a6ae3`；由乘客頁取消。 |
+| Production preview 入口 | `npm run build` 通過。`ui-template.html?route-check#anchor` 與 `dispatch.html?route-check#section` 都保留查詢參數及 hash，`index.html?passenger=…` 進入乘客頁。Production `/?passenger=…&random=1` 刷新後 Server 只有一筆 `6da1a19e`，由乘客頁取消。這確認靜態入口及 API 代理可用。 |
+| Production 地圖 | Preview 的乘客／監控 UI 與 Server 連線正常，但畫面地圖一直顯示載入中，沒有繪出底圖；同一憑證、瀏覽器與 Server 的開發網址可載入真實地圖。公開官方文件只說需由註冊取得 Key／Token，沒有說明 4173 埠是否受來源限制，因此原因未確認，不把它記成憑證或程式碼缺陷。 |
+| 地圖選點與接送 | 在開發頁實際點選上車 `[121.53292, 25.04344]`、下車 `[121.53721, 25.04344]`，請求 `928cbab1` 由 vehicle-03 完成；乘客頁跟隨開啟，觀察到完成後自動解除。 |
+| 終止行程凍結 | 第一筆完成後，以另一乘客提出相鄰接送，vehicle-03 接下任務並開始移動；原乘客頁仍顯示第一筆 `928cbab1` 完成及原路線／地圖視野。Server 確認新請求由同一車承接，舊頁未切換到新任務。第二筆 `1146c3b8` 後續完成。 |
+| 行程中調速 | 第二筆接送以 1× 行駛，Server 讀到相同 task `7011acd9` 的前往接人進度約 5%；監控頁調回 60× 後，該 task 繼續到 100% 完成，沒有重置。 |
+
+地圖／SimulationService 程式碼複查未發現可確認的輪次或操作競態；代數與 AbortController guard、地圖 late model 清理仍按實際執行順序檢查。即席 SDK 邊界檢查與 3D SDK 實際載入均已做過；但產品沒有工作區內頁導覽，故不能從介面實測 Angular component 被卸載再建立，也沒有新增測試路由。窄螢幕視窗控制在目前 in-app browser 未改變實際 viewport（仍為 1280×720），所以響應式排版仍未完成實際瀏覽器驗收。Production preview 地圖、窄螢幕、真實工作區卸載仍列待驗；任務維持 `awaiting-validation`。
