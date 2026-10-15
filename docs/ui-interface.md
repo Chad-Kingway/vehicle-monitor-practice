@@ -1,6 +1,13 @@
 # UI 最小接入契約
 
-實作 `ui-template.html`、`src/ui-template.css`、`src/ui-template.js`。版面、風格、DOM 的 ID/class 及元件結構由實作者決定。
+從空白起點獨立設計 `ui-template.html`、`src/ui-template.css`、`src/ui-template.js`，目的是探索不同 AI 自己提出的 UI 設計。本文只規定功能接入方式，不提供視覺範本。
+
+## 獨立設計要求
+
+- 先閱讀本文與 `src/ui-client.d.ts`，自行決定資訊架構、導覽、版面、配色、字體、元件及 DOM 結構。模板若已有畫面，可重新建立，無須延續先前設計。
+- 不要閱讀、複製或仿照 `index.html`、`dispatch.html`、`src/style.css`、`src/dispatch-style.css`，或 `src/monitor.js`、`src/passenger.js`、`src/ui.js` 產生的畫面來設計新 UI。只替原版換色、換字體或調整間距，不符合本次目的。
+- 系統功能透過 `src/ui-client.js` 接入。新 UI 不得直接載入 `src/main.js`、`src/dispatch.js`、`src/app.js`、上述既有畫面程式或樣式；呈現與事件綁定須自行實作。共用模組內部的相依檔案由共用模組管理。
+- 保留原版入口、調度台入口及共用模組。接入有疑問時可查閱 `src/ui-client.js`，不要藉由修改共用介面或套用既有頁面完成新 UI。
 
 ## 接入
 
