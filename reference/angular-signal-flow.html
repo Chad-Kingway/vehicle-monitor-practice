@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：本專案的 Signal 更新流程</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>本專案的 Signal 更新流程</h1><article>
+<ol><li><code>poll()</code> 取得 Server 快照。</li><li><code>acceptSnapshot()</code> 更新服務內部的 <code>rawState</code>。</li><li><code>emit()</code> 呼叫 <code>current.set(getState())</code>，更新 Writable Signal。</li><li>元件的 <code>computed()</code> 讀取唯讀 <code>state()</code> 並重算衍生值。</li><li>範本讀取計算 Signal，例如 <code>{{ online() }}</code>，Angular 更新對應畫面。</li></ol>
+<p><code>current</code> 由 SimulationService 私有持有；元件透過 <code>state</code> 讀取最新值，不直接修改它。</p>
+<p><a href="../lessons/0014-signal-updates-the-ui.html">第 14 課：Signal 如何讓車隊數字更新？</a> · <a href="../src/app/simulation.service.ts">SimulationService</a> · <a href="../src/app/monitor.component.ts">MonitorComponent</a></p>
+</article></main></body></html>

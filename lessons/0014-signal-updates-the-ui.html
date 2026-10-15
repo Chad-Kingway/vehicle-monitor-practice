@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 14 課：Signal 如何讓車隊數字更新？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 14</div><h1>Signal 如何讓車隊數字更新？</h1><p class="subtitle">沿著一次監控資料更新，看 Angular 怎麼知道要重算並重畫。</p></header>
+<article>
+<h2>Signal 是會通知讀取者的值</h2>
+<p>一般變數的值改了，Angular 不一定知道哪個畫面依賴它。Signal 是 Angular 可追蹤的值：讀取時呼叫它，Angular 記下誰讀了；Signal 更新時，讀取它的計算與範本就能更新。Signal 的讀取方式是函式呼叫，例如 <code>state()</code>。</p>
+
+<h2>本專案用可寫 Signal 對外提供唯讀狀態</h2>
+<p><a href="../src/app/simulation.service.ts"><code>SimulationService</code></a> 有兩個相關欄位：</p>
+<pre><code>private readonly current: WritableSignal&lt;UiState&gt;;
+readonly state: Signal&lt;UiState&gt;;
+
+this.current = signal(this.getState());
+this.state = this.current.asReadonly();</code></pre>
+<p><code>current</code> 由服務內部更新；元件拿到的 <code>state</code> 只能讀，不能直接改。這讓服務保有狀態寫入權，畫面則訂閱最新狀態。</p>
+
+<h2>從 Server 快照到畫面上的「在線」數字</h2>
+<p>輪詢收到新的 Server 快照後，服務的 <code>acceptSnapshot()</code> 更新內部 <code>rawState</code>，再呼叫 <code>emit()</code>。<code>emit()</code> 會執行 <code>current.set(this.getState())</code>，把新狀態放進 Signal。</p>
+<p><a href="../src/app/monitor.component.ts"><code>MonitorComponent</code></a> 用 <code>computed()</code> 從 Signal 計算在線車輛數：</p>
+<pre><code>readonly online = computed(() =&gt;
+  this.client.state().snapshot?.vehicles
+    .filter(vehicle =&gt; vehicle.connection_status === 'online').length || 0
+);</code></pre>
+<p>範本用 <code>{{ online() }}</code> 顯示這個計算值。因為範本讀取了 Signal，Angular 會追蹤這個相依關係。收到新快照 → <code>current.set(...)</code> → <code>online()</code> 重算 → 頁面上的在線數字更新。</p>
+<div class="callout"><strong>讀程式時找這三步：</strong>誰寫 Signal？誰讀 Signal？讀到的值在哪個範本顯示？</div>
+
+<section class="exercise"><h2>小練習</h2><p>Server 回來的新快照已放進 <code>rawState</code>，但在線數字要更新，服務還會呼叫哪個方法？在 <code>simulation.service.ts</code> 的 <code>emit()</code> 裡，找出那一行。</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://angular.dev/guide/signals">Angular 官方：Signals</a> — 看 Signal 讀取、更新與 computed 相依關係。速查：<a href="../reference/angular-signal-flow.html">本專案的 Signal 更新流程</a>。</p>
+</article><footer><a href="0013-what-angular-does-here.html">回顧第 13 課：Angular 在這個專案做什麼？</a> · 找到程式碼後回覆那一行即可；答完再往下學。</footer>
+</main></body></html>
