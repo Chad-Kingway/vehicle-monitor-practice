@@ -4,7 +4,7 @@
 
 ## 環境準備
 
-- Node.js 20.19+ 或 22.12+，Python 3.12+。
+- Node.js 22.22.3+（22.x）、24.15+（24.x）或 26+，Python 3.12+。
 - 勤崴 mapThree 1.4.3 的有效 ACCESS_KEY、ACCESS_TOKEN，以及 `http://127.0.0.1:5173` 的來源授權。地圖須連線勤崴服務。
 - 本機模型：`public/models/car/scene.gltf`、`scene.bin` 與 glTF 引用的貼圖，保留原相對路徑。目前本機素材已備妥；新 checkout 需另行取得。模型與 `.env` 均由 Git 忽略。
 
@@ -19,9 +19,9 @@ Copy-Item .env.example .env
 
 若 `.env` 已存在，保留原檔，不要執行最後一行。若 `python` 指向 Microsoft Store 捷徑，請改用已安裝的 Python 完整路徑建立 `.venv`。目前工作目錄已建立 `.venv`，可直接使用其 Python。
 
-在 `.env` 填入 `ACCESS_KEY` 與 `ACCESS_TOKEN`。這是瀏覽器 SDK 憑證，會進入前端產物；請使用對應本機來源的憑證。`SERVER_URL` 預設為 `http://127.0.0.1:8000`，供 Vite 的 `/api` HTTP 代理使用。
+在 `.env` 填入 `ACCESS_KEY` 與 `ACCESS_TOKEN`。這是瀏覽器 SDK 憑證，會進入前端產物；請使用對應本機來源的憑證。`SERVER_URL` 預設為 `http://127.0.0.1:8000`，供 Angular CLI 的 `/api` HTTP 代理使用。
 
-道路查詢另外設定 `ROUTES_API_KEY`，對應官方 Direction REST 的 `Key`，須具備 Routes 權限。Server 從根目錄 `.env` 讀取，同名環境變數優先；變更後重啟 Server。此欄位不由 Vite 注入前端。2026-10-13 已實測本機原有 Key 可使用 REST，並在忽略的 `.env` 設定此欄位；新 checkout 仍須自行提供有效憑證，不自動沿用 SDK Key。
+道路查詢另外設定 `ROUTES_API_KEY`，對應官方 Direction REST 的 `Key`，須具備 Routes 權限。Server 從根目錄 `.env` 讀取，同名環境變數優先；變更後重啟 Server。此欄位不由 Angular CLI 注入前端。2026-10-13 已實測本機原有 Key 可使用 REST，並在忽略的 `.env` 設定此欄位；新 checkout 仍須自行提供有效憑證，不自動沿用 SDK Key。
 
 ## 啟動
 
@@ -49,7 +49,7 @@ Copy-Item .env.example .env
    npm run dev
    ```
 
-   開啟 [車輛監控](http://127.0.0.1:5173/)。SDK、地圖或模型失敗時，側欄顯示原因，HTTP 資料仍持續更新。來源、憑證或素材修正後重新整理；變更 `.env` 後重新啟動 Vite。
+   開啟 [車輛監控](http://127.0.0.1:5173/)。SDK、地圖或模型失敗時，側欄顯示原因，HTTP 資料仍持續更新。來源、憑證或素材修正後重新整理；變更 `.env` 後重新啟動 Angular CLI。
 
 ## 設定與 HTTP
 
@@ -75,7 +75,7 @@ Copy-Item .env.example .env
 
 不同輪次回報回應 409，不存在的車輛回應 404，無效座標／朝向回應 422。最後回報時間由 Server 產生；離線判定使用單調時間，不受系統時鐘校正影響。Client 發現新輪次時重新取得初始狀態。
 
-Server 可用 `--config 路徑` 與 `--port 連接埠` 指定啟動設定；Client 可用 `--server HTTP_URL` 與 `--vehicle-id 識別碼` 指定來源。變更 Server 連接埠時也需同步 `.env` 的 `SERVER_URL`。所有應用程式資料通訊使用 HTTP；Vite 的開發 HMR 連線只用於程式碼更新。
+Server 可用 `--config 路徑` 與 `--port 連接埠` 指定啟動設定；Client 可用 `--server HTTP_URL` 與 `--vehicle-id 識別碼` 指定來源。變更 Server 連接埠時也需同步 `.env` 的 `SERVER_URL`。所有應用程式資料通訊使用 HTTP；Angular CLI 的開發 HMR 連線只用於程式碼更新。
 
 ## 人工驗收
 
@@ -86,7 +86,7 @@ Server 可用 `--config 路徑` 與 `--port 連接埠` 指定啟動設定；Clie
 5. 重啟 Server，確認 `run_id` 改變；舊輪次回報應回應 409，且不修改新輪資料。Client 接著讀取新輪並從初始位置回報。
 6. 執行 `npm run build`；需要驗證建置產物時，保持 Server 執行，執行 `npm run preview` 並開啟 `http://127.0.0.1:4173`（此來源亦需勤崴授權）。
 
-本專案尚無既有自動測試，依規格不新增測試檔。語法檢查可執行 `node --check src/main.js`、`node --check src/sdk.js`、`node --check src/vehicle-map.js`、`node --check vite.config.js` 與 `.\.venv\Scripts\python.exe -m compileall -q server clients`。完整流程與實際驗收結果見 [第一版整合驗收](docs/manual-acceptance.md)。
+本專案尚無既有自動測試，依規格不新增測試檔。`npm run build` 包含 TypeScript 與 Angular 模板的嚴格檢查；另可執行 `node --check src/sdk.js`、`node --check src/vehicle-map.js`、`node --check tools/angular.mjs` 與 `.\.venv\Scripts\python.exe -m compileall -q server clients`。完整流程與實際驗收結果見 [第一版整合驗收](docs/manual-acceptance.md)。
 
 ## 乘客、生成器與重新開始
 
@@ -130,15 +130,19 @@ Server 按送出順序掃描等待請求，選擇容量足夠、在線且空閒�
 
 所有地圖頁均可切換 POI 及調整模型比例。模型比例為 1～100、預設 30；POI 預設顯示。兩項偏好由瀏覽器依監控／乘客頁類型分別保存，不寫入 Server 設定。
 
-## 自訂 UI
+## Angular 前端
 
-將 [UI 最小接入契約](docs/ui-interface.md) 交給 AI，實作 `ui-template.html`、`src/ui-template.css`、`src/ui-template.js`。三個檔案目前只有空白入口；透過 `src/ui-client.js` 訂閱資料、執行操作與掛載地圖，DOM 與視覺可自行設計。原版監控與乘客頁也使用同一個共用模組。
+採 Angular 22、TypeScript 與 standalone components，以 main 原版介面為畫面基準。`/dispatch.html` 與 `/ui-template.html` 為相容入口，導向同一套 Angular 介面並保留 query 與 hash；`?passenger=<識別碼>`、`random=1` 與 `?route-check` 維持既有用途。
 
-啟動 Vite 後從 `/ui-template.html` 預覽；現有 `/` 與 `/dispatch.html` 可用於比對功能。新 UI 實作完成後，人工確認監控選車／跟隨、乘客選點／送出／取消，以及斷線時保留資料並停用送出；不得在送出結果待確認時另建新請求。
+`src/app/` 的元件負責畫面及表單；`SimulationService` 以唯讀 Signals 對外提供狀態，`ApiService` 以 HttpClient 發送 HTTP，RxJS 管理輪詢排程與操作合併。地圖工作區持有一張地圖，內部選車、搜尋、設定與詳情更新時不重建；工作區銷毀才中止 HTTP、解除事件並釋放地圖。地圖 SDK 封裝仍位於 `src/vehicle-map.js`，不把 Server 派車或車輛模擬搬入 Angular。
+
+開發與建置命令會從 `.env` 產生忽略版控的 `src/generated/map-config.ts`，僅包含瀏覽器 SDK 所需的兩項設定；`ROUTES_API_KEY` 留在 Server。`npm run preview` 於 4173 提供 `dist/browser` 建置產物與 `/api` 代理，不會重新建置；`.env` 的瀏覽器 SDK 設定變更後須重新建置。
+
+元件與服務接入方式見 [Angular UI 接入契約](docs/ui-interface.md)，遷移目的與取捨見 [ADR 0003](docs/adr/0003-angular-frontend.md)。
 
 ## 道路路線整合驗收
 
-1. 啟動 Server 與 Vite，開啟 [道路路線驗收](http://127.0.0.1:5173/?route-check)。這是整合用入口；一般監控頁隱藏此表單，也不會自動查詢路線。車輛 Client 可另行執行，查詢不依賴它。
+1. 啟動 Server 與 Angular CLI，開啟 [道路路線驗收](http://127.0.0.1:5173/?route-check)。這是整合用入口；一般監控頁隱藏此表單，也不會自動查詢路線。車輛 Client 可另行執行，查詢不依賴它。
 2. 按「查詢官方路線」，核對地圖藍線、綠色圓形「起」、紅色方形「迄」，以及側欄的公尺、秒數、道路座標點數。畫面以俯視定位整條路線；瀏覽器直接使用 Server 已解碼的座標，不另查 SDK DirectionsService。
 3. 預設起訖 `[121.561, 25.0334]` → `[121.517, 25.0478]` 已於 2026-10-13 實測成功：官方 `HTTP 200 / status OK`，15 個 steps 解碼合併為 105 點，6,064 公尺、999 秒。道路幾何起訖為 `[121.56098, 25.03307]` → `[121.51623, 25.04793]`；官方 leg 的起訖 metadata 為請求點，steps 才是道路投影點。因此標記放在請求點，藍線保留道路投影位置，不補直線。預估時間可能隨查詢時刻改變。
 4. 更換一組起訖或對調方向再查詢，確認舊線與標記被清除、只顯示新結果。輸入錯誤座標後查詢，應顯示錯誤，且不保留前次成功線形或數值。
@@ -156,6 +160,9 @@ Server 按送出順序掃描等待請求，選擇容量足夠、在線且空閒�
 - [Direction REST](https://kwmapdeveloper.localking.com.tw/api-details#api=places-api-prod&operation=get-maps-api-directions-output-key-key)：正式端點為 `GET https://kwmap.localking.com.tw/maps/api/Directions/json`，參數 `Key`、`Origin`、`Destination`、`Mode=driving`、`Language=zh-TW`。基本 Direction 限制最多 10 個 waypoints，指定出發時間等進階需求須使用 Direction Advance；此切片只查起訖兩點。
 - [Encoded Polyline](https://developers.google.com/maps/documentation/utilities/polylinealgorithm)：E5 演算法與官方三點範例；已核對解碼結果及真實 REST steps。
 - [add3dLine](https://kw3dmap.localking.com.tw/3dmap/api/mapThree/methods#add3dline)、[Marker](https://kw3dmap.localking.com.tw/3dmap/api/marker/info)、[fitBounds](https://kw3dmap.localking.com.tw/3dmap/api/map/methods#fitbounds)：顯示 Server 道路線形、不同起訖標記並定位。
-- [Vite HTTP 代理](https://vite.dev/config/server-options#server-proxy)、[FastAPI workers](https://fastapi.tiangolo.com/deployment/server-workers/)。
+- [Angular CLI HTTP 代理](https://angular.dev/tools/cli/serve#proxying-to-a-backend-server)、[FastAPI workers](https://fastapi.tiangolo.com/deployment/server-workers/)。
 
 
+
+- [Angular Signals](https://angular.dev/guide/signals)、[HttpClient](https://angular.dev/guide/http)、[元件生命週期](https://angular.dev/guide/components/lifecycle)。
+- [地圖 remove／off](https://kw3dmap.localking.com.tw/3dmap/api/map/methods#remove)：工作區釋放與事件解除。

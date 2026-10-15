@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "cli": { "analytics": false },
+  "projects": {
+    "vehicle-monitor": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist",
+            "index": "index.html",
+            "browser": "src/main.ts",
+            "tsConfig": "tsconfig.json",
+            "assets": [{ "glob": "**/*", "input": "public" }],
+            "styles": ["src/style.css"]
+          },
+          "configurations": {
+            "production": { "outputHashing": "all", "budgets": [{ "type": "initial", "maximumWarning": "650kB", "maximumError": "1MB" }] },
+            "development": { "optimization": false, "sourceMap": true, "extractLicenses": false }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": { "host": "127.0.0.1", "port": 5173, "proxyConfig": "tools/proxy.cjs" },
+          "configurations": {
+            "development": { "buildTarget": "vehicle-monitor:build:development" },
+            "production": { "buildTarget": "vehicle-monitor:build:production" }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    }
+  }
+}

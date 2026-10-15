@@ -7,6 +7,15 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; }
+app-root { display: block; }
+app-monitor, app-passenger, app-settings { display: contents; }
+app-request-list { display: block; }
+input:not([type="range"]):not([type="checkbox"]) { min-width: 0; width: 100%; padding: 9px; border: 1px solid #43566f; border-radius: 6px; background: #18283c; color: inherit; }
+.summary { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #bfcedd; }
+.search-label { display: grid; gap: 6px; font-size: 12px; }
+.record-card progress { width: 100%; accent-color: #6dd6b0; }
+.map-loading { position: absolute; inset: 0; display: grid; place-items: center; background: #e2e9eedb; z-index: 1; font-size: 14px; pointer-events: none; }
+.button-link + .button-link { margin-left: 6px; }
 .monitor { display: grid; grid-template-columns: 310px minmax(0, 1fr); height: 100dvh; }
 .panel { padding: 30px 24px 20px; overflow: auto; display: flex; flex-direction: column; gap: 24px; }
 .eyebrow { color: #7d9ab6; font-size: 10px; letter-spacing: .18em; font-weight: 600; }

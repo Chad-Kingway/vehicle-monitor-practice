@@ -8,6 +8,8 @@
 /.venv/
 /node_modules/
 /dist/
+/src/generated/
+/.angular/
 /.local/
 __pycache__/
 *.pyc

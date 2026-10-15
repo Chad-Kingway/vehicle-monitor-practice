@@ -1,5 +1,5 @@
 # 專案規範
-- 本專案為 `vehicle-monitor-practice` 車輛監控系統，前端使用 Vite + Vanilla JavaScript（HTML / CSS），後端使用 Python + FastAPI，通訊統一使用 HTTP。
+- 本專案為 `vehicle-monitor-practice` 車輛監控系統，前端使用 Angular CLI + TypeScript，後端使用 Python + FastAPI，通訊統一使用 HTTP。
 - 系統採 Client / Server 架構：Server 管理車輛、需求與任務資料；車輛 Client 負責模擬及回報狀態；乘客 Client 負責提出需求；監控網頁負責顯示 Server 資料。
 - 地圖與 3D 模型顯示留在前端；第三方 SDK / API 以官方文件為依據，未確認的介面或服務不得自行假設。
 - `../kwmap-practice/` 為舊專案，僅供讀取與參考；所有修改限於本專案，不得修改、刪除或提交舊專案檔案。

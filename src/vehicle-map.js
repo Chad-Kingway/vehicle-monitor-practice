@@ -1,4 +1,5 @@
 import { loadMapThree, withTimeout } from "./sdk.js";
+import { mapConfig } from "./generated/map-config";
 
 const MODEL_URL = "/models/car/scene.gltf";
 const INITIAL_ROTATION = { x: 90, y: 180, z: 0 };
@@ -13,8 +14,8 @@ function readPreferences(key) {
   } catch { return { ...DEFAULT_PREFERENCES }; }
 }
 
-async function checkModelAssets() {
-  const response = await fetch(MODEL_URL, { signal: AbortSignal.timeout(10000) });
+async function checkModelAssets(signal) {
+  const response = await fetch(MODEL_URL, { signal: AbortSignal.any([AbortSignal.timeout(10000), signal]) });
   if (!response.ok || response.headers.get("content-type")?.includes("text/html")) {
     throw new Error("缺少模型，請將素材放入 public/models/car。");
   }
@@ -26,7 +27,7 @@ async function checkModelAssets() {
     .map(({ uri }) => uri).filter((uri) => uri && !uri.startsWith("data:"));
   await Promise.all([...new Set(uris)].map(async (uri) => {
     const url = new URL(uri, new URL(MODEL_URL, window.location.origin));
-    const asset = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(10000) });
+    const asset = await fetch(url, { method: "HEAD", signal: AbortSignal.any([AbortSignal.timeout(10000), signal]) });
     if (!asset.ok || asset.headers.get("content-type")?.includes("text/html")) {
       throw new Error(`缺少模型相依素材：${url.pathname}`);
     }
@@ -36,25 +37,66 @@ async function checkModelAssets() {
 
 export async function createVehicleMap(vehicles, status, {
   center, onPick, preferenceScope = onPick ? "passenger" : "monitor",
-  container, onPreferences, onError,
+  container, onPreferences, onError, signal,
 } = {}) {
+  const lifetime = new AbortController();
+  const workSignal = signal ? AbortSignal.any([signal, lifetime.signal]) : lifetime.signal;
+  let destroyed = false;
+  let map;
+  let preferenceStorage;
+  let stylePreferences;
+  let click;
+  let styleLoaded;
+  const models = new Map();
+  const latest = new Map();
+  const pending = new Set();
+  const lines = [];
+  const markers = [];
+  // SDK 官方 map.remove() 釋放整張地圖；先解除外部監聽並阻擋晚到工作。
+  function destroy() {
+    if (destroyed) return;
+    destroyed = true; lifetime.abort();
+    workSignal.removeEventListener("abort", destroy);
+    if (preferenceStorage) window.removeEventListener("storage", preferenceStorage);
+    if (map) {
+      if (stylePreferences) map.off("style.load", stylePreferences);
+      if (styleLoaded) map.off("style.load", styleLoaded);
+      if (click) map.off("click", click);
+      // 個別資源失敗仍繼續清理其餘資源與整張地圖。
+      const cleanup = [...markers.map(marker => () => marker.remove()),
+        ...[...lines, ...models.values()].map(object => () => map.three.remove3dObject(object)), () => map.remove()];
+      for (const release of cleanup) { try { release(); } catch { /* 繼續清理其他資源。 */ } }
+    }
+    models.clear(); latest.clear(); pending.clear(); lines.length = 0; markers.length = 0;
+  }
+  workSignal.addEventListener("abort", destroy, { once: true });
+  const ensureActive = () => { if (workSignal.aborted) throw new DOMException("地圖工作區已關閉", "AbortError"); };
+  try {
+  ensureActive();
   const fleet = Array.isArray(vehicles) ? vehicles : [vehicles];
-  const accessKey = import.meta.env.ACCESS_KEY;
-  const accessToken = import.meta.env.ACCESS_TOKEN;
-  if (!accessKey || !accessToken) throw new Error("請在 .env 填入 ACCESS_KEY 與 ACCESS_TOKEN，再啟動 Vite。");
-  if (fleet.length) await checkModelAssets();
+  const { accessKey, accessToken } = mapConfig;
+  if (!accessKey || !accessToken) throw new Error("請在 .env 填入 ACCESS_KEY 與 ACCESS_TOKEN，再啟動前端。");
+  if (fleet.length) await checkModelAssets(workSignal);
   status("載入勤崴 SDK…");
-  const MapThree = await loadMapThree();
+  const MapThree = await withTimeout(loadMapThree(), 30000, "勤崴 SDK 載入逾時。", workSignal);
+  ensureActive();
   status("載入地圖…");
-  const map = await withTimeout(new MapThree(container, {
+  const loadingMap = Promise.resolve(new MapThree(container, {
     accessKey, accessToken, style: "https://kw3dmap.localking.com.tw/openapi/map/kwmap.etxt",
     center: center || fleet[0]?.position || [121.54, 25.045], pitch: onPick ? 0 : 55,
     bearing: 0, zoom: onPick ? 14 : 16, trackResize: true,
-  }), 45000, "地圖初始化逾時，請檢查勤崴憑證、來源授權與網路。");
+  })).then(value => {
+    if (destroyed) { value.remove(); throw new DOMException("地圖工作區已關閉", "AbortError"); }
+    map = value;
+    return value;
+  });
+  await withTimeout(loadingMap, 45000, "地圖初始化逾時，請檢查勤崴憑證、來源授權與網路。", workSignal);
+  ensureActive();
   await withTimeout(new Promise(resolve => {
-    const loaded = () => { map.off("style.load", loaded); resolve(); };
-    map.on("style.load", loaded); if (map.isStyleLoaded()) loaded();
-  }), 45000, "地圖樣式載入逾時，請檢查勤崴憑證與網路。");
+    styleLoaded = () => { map.off("style.load", styleLoaded); resolve(); };
+    map.on("style.load", styleLoaded); if (map.isStyleLoaded()) styleLoaded();
+  }), 45000, "地圖樣式載入逾時，請檢查勤崴憑證與網路。", workSignal);
+  ensureActive();
   const preferenceKey = `vehicle-monitor.map-preferences.${preferenceScope}`;
   let preferences = readPreferences(preferenceKey);
   let poiControlDisabled = false;
@@ -65,9 +107,6 @@ export async function createVehicleMap(vehicles, status, {
   const publishPreferences = () => onPreferences?.({
     ...preferences, poiDisabled: poiControlDisabled, scaleDisabled: scaleControlDisabled, error: preferenceError,
   });
-  const models = new Map();
-  const latest = new Map();
-  const pending = new Set();
   let assetsReady = fleet.length ? Promise.resolve() : null;
   let followId;
   function applyPoi(value) {
@@ -109,10 +148,12 @@ export async function createVehicleMap(vehicles, status, {
     publishPreferences();
     if (error) throw new Error(error);
   }
-  window.addEventListener("storage", event => {
+  preferenceStorage = event => {
     if (event.key !== preferenceKey) return;
     preferences = readPreferences(preferenceKey); applyLoadedPreferences();
-  });
+  };
+  window.addEventListener("storage", preferenceStorage);
+  stylePreferences = applyLoadedPreferences;
   map.on("style.load", applyLoadedPreferences);
   applyLoadedPreferences();
   function place(model, vehicle) {
@@ -125,19 +166,27 @@ export async function createVehicleMap(vehicles, status, {
     pending.add(vehicle.id);
     let expired = false;
     try {
-      await (assetsReady ||= checkModelAssets().catch(error => { assetsReady = null; throw error; }));
+      await (assetsReady ||= checkModelAssets(workSignal).catch(error => { assetsReady = null; throw error; }));
+      ensureActive();
       const loading = map.three.add3dModel({
         id: vehicle.id, obj: MODEL_URL, type: "gltf", coordinates: [...vehicle.position, 0],
         rotation: { ...INITIAL_ROTATION }, scale: MODEL_INITIAL_SCALE, anchor: "bottom",
-      }).then(model => { if (expired) map.three.remove3dObject(model); return model; });
-      const model = await withTimeout(loading, 45000, `模型載入逾時：${vehicle.id}`);
+      }).then(model => {
+        if (expired || destroyed) {
+          try { map.three.remove3dObject(model); } catch { /* 地圖可能已釋放，仍阻止晚到模型寫回狀態。 */ }
+          throw new DOMException("模型載入已結束", "AbortError");
+        }
+        return model;
+      });
+      const model = await withTimeout(loading, 45000, `模型載入逾時：${vehicle.id}`, workSignal);
+      ensureActive();
       if (!latest.has(vehicle.id)) { map.three.remove3dObject(model); return; }
       place(model, latest.get(vehicle.id)); model.setScale(modelScale(preferences.scale));
       models.set(vehicle.id, model); map.redraw();
     } catch (error) {
       expired = true;
       const partial = models.get(vehicle.id);
-      if (partial) { models.delete(vehicle.id); map.three.remove3dObject(partial); }
+      if (partial) { models.delete(vehicle.id); if (!destroyed) map.three.remove3dObject(partial); }
       throw error;
     }
     finally { pending.delete(vehicle.id); }
@@ -146,8 +195,6 @@ export async function createVehicleMap(vehicles, status, {
   status("載入車輛模型…");
   // 同一素材各自建立模型，避免不同車輛共用位置與朝向物件。
   for (const vehicle of fleet) await addVehicle(vehicle);
-  const lines = [];
-  const markers = [];
   function clearRoute() {
     for (const line of lines) map.three.remove3dObject(line);
     lines.length = 0;
@@ -169,13 +216,13 @@ export async function createVehicleMap(vehicles, status, {
     lines.push(map.three.add3dLine({ id, coordinates: coordinates.map(point => [...point, 0]), color, width: 6 }));
   }
   function locate(position) { map.setCenter({ lng: position[0], lat: position[1] }); }
-  if (onPick) map.on("click", event => {
+  if (onPick) { click = event => {
     // click 的 lngLat 已由舊專案在 mapThree 1.4.3 實測；保留有效性檢查。
     const { lng, lat } = event.lngLat || {};
     if (Number.isFinite(lng) && Number.isFinite(lat)) onPick([lng, lat]);
-  });
+  }; map.on("click", click); }
   return {
-    clearRoute, locate, setPreferences,
+    destroy, clearRoute, locate, setPreferences,
     follow(id) { followId = id; const vehicle = latest.get(id); if (vehicle) locate(vehicle.position); },
     showPoints(pickup, destination) { clearRoute(); addMarker(pickup, "上", "origin"); addMarker(destination, "下", "destination"); map.redraw(); },
     showTask(task) {
@@ -220,10 +267,11 @@ export async function createVehicleMap(vehicles, status, {
         latest.set(vehicle.id, vehicle);
         const model = models.get(vehicle.id);
         if (model) place(model, vehicle);
-        else void addVehicle(vehicle).catch(error => { if (onError) onError(error); else status(error.message); });
+        else void addVehicle(vehicle).catch(error => { if (!destroyed) { if (onError) onError(error); else status(error.message); } });
         if (vehicle.id === followId) locate(vehicle.position);
       }
       map.redraw();
     },
   };
+  } catch (error) { destroy(); throw error; }
 }

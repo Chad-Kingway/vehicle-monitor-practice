@@ -1,12 +1,23 @@
-export function withTimeout(promise, milliseconds, message) {
+export function withTimeout(promise, milliseconds, message, signal) {
   let timer;
+  let abort;
   return Promise.race([
     promise,
-    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), milliseconds); }),
-  ]).finally(() => clearTimeout(timer));
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), milliseconds);
+      abort = () => reject(new DOMException("地圖工作區已關閉", "AbortError"));
+      if (signal?.aborted) abort();
+      else signal?.addEventListener("abort", abort, { once: true });
+    }),
+  ]).finally(() => { clearTimeout(timer); signal?.removeEventListener("abort", abort); });
 }
 
+let sdkPromise;
 export function loadMapThree() {
+  return sdkPromise ||= loadSdk().catch(error => { sdkPromise = null; throw error; });
+}
+
+function loadSdk() {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.src = "https://kw3dmap.localking.com.tw/openapi/loader/mapThree-1.4.3.loader.js";

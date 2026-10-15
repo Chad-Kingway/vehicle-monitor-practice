@@ -95,14 +95,7 @@ export interface UiState {
   };
   route: RoadRoute | null;
 }
-export interface UiClient {
-  getState(): UiState;
-  subscribe(listener: (state: UiState) => void): () => void;
-  start(): void;
-  stop(): void;
-  mountMap(container: HTMLElement): Promise<void>;
-  passengerUrl(options?: { random?: boolean }): string;
-  actions: {
+export interface UiActions {
     selectVehicle(id: string): void;
     follow(enabled: boolean): void;
     locate(): void;
@@ -115,7 +108,4 @@ export interface UiClient {
     queryRoute(origin: Position, destination: Position): Promise<RoadRoute>;
     clearRoute(): void;
     setMapPreferences(preferences: { poi?: boolean; scale?: number }): void;
-  };
 }
-
-export function createUiClient(): UiClient;
