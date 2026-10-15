@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：Angular track</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>Angular track</h1><article>
+<pre><code>@for (vehicle of fleet(); track vehicle.id) {
+  &lt;button&gt;{{ vehicle.id }}&lt;/button&gt;
+}</code></pre>
+<p>track 指定資料項目的識別值，以對應清單更新前後的畫面列。順序由清單決定；既有列可沿用、移動，新項目建立，不再出現的項目移除。</p>
+<ul><li><code>track item.id</code>：穩定資料身分；動態清單首選。</li><li><code>track $index</code>：位置身分；適合固定清單。</li><li><code>track item</code>：物件參考；HTTP 新物件可能造成重建。</li><li>key 在同一清單內應唯一、穩定，計算應簡單且無副作用。</li><li>相同 ID 仍可更新文字、屬性及元件輸入。</li><li>track 不處理 API、排序或資料更新通知，也不快取已移除的列。</li><li>同物件參考而追蹤屬性改變時，現代 @for 仍可能沿用畫面；不要用改 key 強制重建。</li></ul>
+<p><a href="../lessons/0020-track-complete-guide.html">完整教學與練習解答</a> · <a href="https://angular.dev/guide/templates/control-flow">官方文件</a> · <a href="https://angular.dev/errors/NG0955">重複 key：NG0955</a> · <a href="https://angular.dev/errors/NG0956">整份重建：NG0956</a></p>
+</article></main></body></html>

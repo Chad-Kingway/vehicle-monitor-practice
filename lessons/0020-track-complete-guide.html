@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 20 課：Angular track 完整教學</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 20</div><h1>Angular track 完整教學</h1><p class="subtitle">從一列資料如何對應一列畫面，到 HTTP 更新、排序與錯誤識別值。</p></header>
+<article>
+<p><strong>track 指定每個項目的識別值，讓 Angular 在清單更新時對應既有畫面列。</strong>畫面列包含 HTML 元素；若列中有子元件，也包含子元件實例。這種對應決定哪些內容可以沿用、移動、建立或移除。</p>
+<p>閱讀順序：<a href="#syntax">語法</a> → <a href="#updates">更新推演</a> → <a href="#choices">識別值選擇</a> → <a href="#pitfalls">常見錯誤</a> → <a href="#practice">練習與解答</a>。</p>
+
+<h2 id="syntax">1. 語法：track 後面是運算式</h2>
+<pre><code>@for (vehicle of fleet(); track vehicle.id) {
+  &lt;button&gt;{{ vehicle.id }}&lt;/button&gt;
+}</code></pre>
+<ul><li><code>fleet()</code>：取得這次要顯示的清單。</li><li><code>vehicle</code>：每一輪拿到的車輛。</li><li><code>track vehicle.id</code>：以這台車的 ID 辨認它所對應的畫面列。</li><li>大括號內是每一列的範本。</li></ul>
+<p>這是 Angular 範本語法，<code>track</code> 不是 TypeScript 的一般迴圈關鍵字，也不是 HTML attribute。<code>@for</code> 需要寫 tracking expression，不能只刪掉 <code>track vehicle.id</code>。參考 <a href="https://angular.dev/api/core/@for">@for API</a>。</p>
+
+<h2 id="updates">2. Angular 更新時做什麼？</h2>
+<p>第一次沒有舊畫面可比，Angular 建立各列。下一次清單更新，再依識別值對應。用字母表示既有畫面列：</p>
+<pre><code>舊資料 ID          01       02       03
+既有畫面列         A        B        C
+
+新資料 ID          03       01       04
+對應畫面列         C        A        D（新建）
+
+B 對應的 02 不在新清單中 → 移除</code></pre>
+<p>03、01 可沿用各自的畫面列並調整位置；04 新增一列；02 移除。<strong>順序由新清單決定，track 負責辨認身分。</strong></p>
+<p>如果 ID 不變，車輛位置等資料改變，Angular 仍更新那列的文字、屬性或元件輸入。沿用畫面不代表忽略新資料，也不代表停止計算。</p>
+
+<h2>3. 為什麼會影響使用者？</h2>
+<p>畫面元素除了文字，也可能有鍵盤焦點、文字選取或輸入狀態；列裡的元件也可能保存自己的展開狀態。正確對應讓這些狀態能繼續跟著同一筆資料，減少不必要的重建。若某列真的被移除，該列的狀態也不會靠 track 永久保存。官方 <a href="https://angular.dev/errors/NG0956">NG0956</a> 說明整份清單重建的成本與狀態流失問題。</p>
+
+<h2>4. 新的 JavaScript 物件，仍可代表同一台車</h2>
+<pre><code>const previous = { id: 'vehicle-01', heading: 0 };
+const next = { id: 'vehicle-01', heading: 90 };
+
+previous === next       // false：不同物件
+previous.id === next.id // true：同一車輛 ID</code></pre>
+<p>HTTP 回應解析出的物件通常是新物件。因此用 <code>track vehicle.id</code>，Angular 可以依穩定 ID 對應前後資料，而不是因每次物件都不同就把整份清單當成新項目。本專案的車隊 HTTP 輪詢很適合這種方式。</p>
+
+<h2 id="choices">5. 三種常見寫法怎麼選？</h2>
+<p><strong>track vehicle.id：追蹤資料身分。</strong>適合有新增、刪除、搜尋或排序的車隊清單。同一台車在這個清單裡應有唯一且穩定的 ID。</p>
+<p><strong>track $index：追蹤位置。</strong><code>$index</code> 是第幾列，從 0 開始。適合固定且不會改變項目與順序的清單。如果第一列原本是 01，刪掉 01 後變成 02，Angular 會把位置 0 的畫面列沿用給 02；列內自己的狀態就可能跟著位置走，沒有跟著車輛走。</p>
+<p><strong>track vehicle：追蹤物件參考。</strong>適合項目物件確實保持相同參考的情況。HTTP 每次重建物件時，同 ID 也不再是同一個物件，可能導致大量重建。應優先採用明確 ID。官方選擇建議見 <a href="https://angular.dev/guide/templates/control-flow">Control flow</a>。</p>
+
+<h2 id="pitfalls">6. 常見錯誤與界線</h2>
+<ul>
+<li><strong>track vehicle.connection_status：</strong>多台車可能都是 online，識別值重複。唯一性要求在同一份清單內，不需要和整個網站的其他清單互不重複。見 <a href="https://angular.dev/errors/NG0955">NG0955</a>。</li>
+<li><strong>track 車輛經緯度：</strong>位置會變，兩台車也可能同位置，無法穩定代表身分。</li>
+<li><strong>每次產生亂數或 UUID：</strong>追蹤時重新產生的值不穩定。應在資料建立時就取得 ID，後續沿用。</li>
+<li><strong>以為 ID 相同就不更新內容：</strong>相同 ID 只代表可以對應原列；新的資料仍會更新範本繫結。</li>
+<li><strong>以為 key 變就一定銷毀元件：</strong>現代 @for 優先沿用畫面；如果仍是同一個物件參考，即使追蹤屬性改變也可能沿用。不要以改 key 當作強制重建機制。</li>
+<li><strong>以為 track 會送 HTTP 或偵測任意資料改動：</strong>它處理清單更新時的畫面對應；取得資料及通知 Angular 更新仍由服務、Signals 等流程負責。</li>
+</ul>
+
+<h2>7. 套回本專案</h2>
+<p><a href="../src/app/monitor.component.ts">MonitorComponent</a> 的車隊使用 <code>track vehicle.id</code>，接送任務使用 <code>track task.id</code>。車輛即使換了位置、朝向或任務，仍是相同車輛；任務則使用自己的任務 ID。搜尋讓車輛暫時離開顯示清單時，那列會移除；之後再出現會重新建立，track 不是隱藏列的快取。</p>
+
+<h2 id="practice">8. 練習：先判斷，再展開解答</h2>
+<section class="exercise"><p><strong>題一：</strong>前後資料都是全新的物件，ID 從 [01, 02, 03] 變成 [03, 01, 04]，使用 track vehicle.id。哪些列沿用、哪列移除、哪列新增？</p><details><summary>展開解答</summary><p>03、01 沿用並依新清單排列；02 移除；04 新增。即使物件參考全換了，也能用相同 ID 對應。</p></details></section>
+<section class="exercise"><p><strong>題二：</strong>每列元件用自己的欄位保存「已展開」。使用 track $index，刪掉第一台車後，原第一列的展開狀態會跟著車輛身分，還是跟著位置？車隊應改用什麼？</p><details><summary>展開解答</summary><p>會跟著位置；位置 0 的元件可能沿用給下一台車。這個車隊清單應使用 track vehicle.id，讓畫面列對應車輛身分。</p></details></section>
+<section class="exercise"><p><strong>題三：</strong>使用 track vehicle.id，ID 相同但 heading 從 0 變成 90。為什麼畫面可以更新朝向，又不用重新建立整列？</p><details><summary>展開解答</summary><p>ID 用來對應舊畫面列，heading 用來更新該列內容。辨認身分與更新內容是兩件事。</p></details></section>
+<p>首選閱讀：<a href="https://angular.dev/guide/templates/control-flow">Angular 官方 Control flow</a>。速查：<a href="../reference/angular-track.html">track 選擇與更新速查</a>。</p>
+</article><footer><a href="0019-angular-for-renders-list.html">回顧第 19 課：Angular 車隊清單</a> · 可以把任何一題的推理貼回來，我會針對 Angular 的處理方式補充。</footer>
+</main></body></html>

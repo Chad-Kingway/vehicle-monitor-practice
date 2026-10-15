@@ -2,6 +2,9 @@
 
 ## Angular
 
+- [Angular 官方：NG0955](https://angular.dev/errors/NG0955) 與 [NG0956](https://angular.dev/errors/NG0956)
+  分別解釋 track 識別值重複，以及物件身分改變造成整份清單重建；用於 track 完整教學的反例。
+
 - [Angular 官方：Components](https://angular.dev/essentials/components)
   說明元件如何組成 Angular 介面。用於理解本專案的 Workspace、監控及乘客元件。
 - [Angular 官方：Dependency Injection](https://angular.dev/essentials/dependency-injection)
