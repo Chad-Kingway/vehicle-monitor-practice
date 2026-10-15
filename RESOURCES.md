@@ -1,13 +1,26 @@
 # 網頁與本機 Client / Server Resources
 
+## Angular
+
+- [Angular 官方：Components](https://angular.dev/essentials/components)
+  說明元件如何組成 Angular 介面。用於理解本專案的 Workspace、監控及乘客元件。
+- [Angular 官方：Dependency Injection](https://angular.dev/essentials/dependency-injection)
+  說明 service 如何被元件注入及共用。用於追蹤 SimulationService 和 ApiService。
+- [Angular 官方：Making HTTP requests](https://angular.dev/guide/http)
+  說明 Angular HttpClient 的請求流程。用於對照本專案 ApiService 與 FastAPI 的 HTTP 連線。
+- [Angular 官方：Serving applications for development](https://angular.dev/tools/cli/serve)
+  說明 Angular CLI 開發伺服器與 proxy 設定。用於理解本專案 `npm run dev`。
+- [Angular 官方：Building Angular apps](https://angular.dev/tools/cli/build)
+  說明 Angular CLI 如何編譯、最佳化與打包應用程式。用於理解本專案 `npm run build`。
+
 ## Knowledge
 
 - [Vite: Getting Started](https://vite.dev/guide/)
-  說明 Vite 開發伺服器與 `index.html` 入口。用於追蹤這個專案如何由 `npm run dev` 提供網頁。
+  舊版 Vanilla JavaScript 課程使用的開發伺服器參考；目前前端已遷移 Angular，`npm run dev` 由 Angular CLI 提供。
 - [MDN: `<script>` 元素](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script)
-  說明 HTML 如何載入 JavaScript，以及 module script 的基本行為。用於讀懂 `index.html` 的 `<script type="module">`。
+  說明 HTML 如何載入 JavaScript。舊版入口課程使用此資料；目前 `index.html` 以 `<app-root>` 掛載 Angular 應用。
 - [MDN: JavaScript modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)
-  說明 `import` / `export` 如何拆分程式。用於沿著 `src/main.js` 找到前端功能模組。
+  說明 JavaScript 的 `import` / `export`。舊版課程沿著 Vanilla JavaScript 模組追程式；目前 Angular 入口為 `src/main.ts`。
 - [MDN: `Crypto.randomUUID()`](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/randomUUID)
   說明瀏覽器如何產生 v4 UUID。用於讀懂乘客端替每次新請求建立 `client_request_id` 的程式。
 - [MDN: Getting started with CSS](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Getting_started)

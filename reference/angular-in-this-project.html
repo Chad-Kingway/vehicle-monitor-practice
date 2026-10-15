@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：Angular 在本專案的責任分層</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>Angular 在本專案的責任分層</h1><article>
+<h2>啟動與建置</h2><ul><li><code>index.html</code> 提供 <code>&lt;app-root&gt;</code> 掛載點。</li><li><code>src/main.ts</code> 以 <code>bootstrapApplication</code> 啟動 <code>WorkspaceComponent</code>，並提供 <code>HttpClient</code>。</li><li><code>npm run dev</code> 經 <code>tools/angular.mjs</code> 執行 Angular CLI；<code>npm run build</code> 產生 production browser bundle。</li></ul>
+<h2>畫面與狀態</h2><ul><li><code>WorkspaceComponent</code>：工作區外層、選擇監控／乘客畫面、持有地圖容器。</li><li><code>MonitorComponent</code>、<code>PassengerComponent</code>：各自的畫面範本與使用者操作。</li><li><code>SimulationService</code>：Signals、輪詢、操作及地圖生命週期。</li><li><code>ApiService</code>：以 <code>HttpClient</code> 與 HTTP 連接 FastAPI。</li><li><code>vehicle-map.js</code>：封裝勤崴 SDK 與 3D 車輛呈現。</li></ul>
+<h2>追蹤時可以問</h2><ol><li>畫面從哪個掛載點開始？</li><li>哪個 component 顯示這個控制項？</li><li>點擊事件呼叫哪個 action？</li><li>action 改變哪個 service state，或送出哪個 HTTP request？</li><li>哪個 component 範本讀取這個 state 並重繪？</li></ol>
+<p>Angular 負責前端應用結構與互動；FastAPI、車輛 Client 及 HTTP 契約維持原有分工。<a href="../lessons/0013-what-angular-does-here.html">第 13 課：Angular 在這個專案做什麼？</a> · <a href="../src/main.ts">main.ts</a> · <a href="../src/app/workspace.component.ts">WorkspaceComponent</a> · <a href="../src/app/simulation.service.ts">SimulationService</a></p>
+</article></main></body></html>

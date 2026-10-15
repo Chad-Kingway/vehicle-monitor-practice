@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 13 課：Angular 在這個專案做什麼？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 13</div><h1>Angular 在這個專案做什麼？</h1><p class="subtitle">看懂它如何把 TypeScript、HTML 範本、資料服務與地圖接成一個前端。</p></header>
+<article>
+<h2>Angular 是前端框架，不是另一種語言</h2>
+<p>這個專案用 TypeScript 寫前端邏輯，用 HTML 範本描述畫面。Angular 把兩者組成可更新的網頁元件，也提供依賴注入、Signals 與 HTTP 整合等工具。Angular CLI 負責開發伺服器與正式建置；瀏覽器最後執行的是建置後的 JavaScript。</p>
+
+<h2>從 HTML 找到 Angular 程式</h2>
+<p>根目錄 <a href="../index.html"><code>index.html</code></a> 放置 <code>&lt;app-root&gt;</code>。<a href="../src/main.ts"><code>src/main.ts</code></a> 呼叫 <code>bootstrapApplication(WorkspaceComponent, ...)</code>，告訴 Angular 從哪個元件開始啟動，並提供 <code>HttpClient</code>。</p>
+<pre><code>index.html 的 &lt;app-root&gt;
+        ↓ Angular 啟動
+WorkspaceComponent（整個工作區與地圖）
+        ├── MonitorComponent（監控畫面）
+        └── PassengerComponent（乘客畫面）
+        ↓ 共用
+SimulationService → ApiService → FastAPI</code></pre>
+<p>上面是責任關係，不代表每次畫面操作都會重建整棵樹。監控或乘客內容由工作區選擇；地圖容器留在工作區層級。</p>
+
+<h2>元件把畫面和互動放在一起</h2>
+<p><a href="../src/app/monitor.component.ts"><code>MonitorComponent</code></a> 是一個元件：裝飾器的 <code>selector</code> 給它名稱，<code>template</code> 描述清單與按鈕，TypeScript class 提供資料和操作。範本中的 <code>{{ online() }}</code> 顯示計算值；<code>(click)</code> 把按鈕點擊接到操作。</p>
+<pre><code>@Component({
+  selector: 'app-monitor',
+  template: `&lt;button (click)="client.actions.locate()"&gt;定位&lt;/button&gt;`
+})
+export class MonitorComponent {
+  readonly client = inject(SimulationService);
+}</code></pre>
+<p>範本是 Angular 讀的 HTML 樣板，不是瀏覽器直接執行的字串。Angular 會依範本和目前狀態更新實際畫面。</p>
+
+<h2>服務負責跨元件共用的資料流程</h2>
+<p><a href="../src/app/simulation.service.ts"><code>SimulationService</code></a> 持有車隊、請求、連線狀態及地圖生命週期，並用 Signal 提供可追蹤的狀態。元件透過 <code>inject(SimulationService)</code> 取得服務；像 <code>client.state()</code> 的讀取會讓範本隨狀態更新。</p>
+<p><a href="../src/app/api.service.ts"><code>ApiService</code></a> 使用 Angular <code>HttpClient</code> 發 HTTP 請求給 FastAPI。Server、Python 車輛 Client 與 HTTP 資料契約沒有因為前端改用 Angular 而改變。地圖 SDK 仍由 <a href="../src/vehicle-map.js"><code>vehicle-map.js</code></a> 封裝，再由 Angular 工作區呼叫。</p>
+<div class="callout"><strong>先記住這條線：</strong>元件負責呈現和接收操作；服務負責共享狀態與資料工作；Angular 把狀態變化反映到範本。</div>
+
+<section class="exercise"><h2>小練習</h2><p>使用者按下「定位」時，按鈕寫著 <code>client.actions.locate()</code>。它是在改 HTML 範本、呼叫 FastAPI，還是把操作交給共用的前端服務？請用自己的話回答，並指出這條流程中哪個檔案啟動 Angular。</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://angular.dev/essentials/components">Angular 官方：Components</a> — 看元件如何組成應用程式。另可讀 <a href="https://angular.dev/essentials/dependency-injection">Dependency Injection</a> 與 <a href="https://angular.dev/guide/http">Making HTTP requests</a>。</p><p>專案速查：<a href="../reference/angular-in-this-project.html">Angular 在本專案的責任分層</a>。</p>
+</article><footer><a href="0012-retry-request-idempotency.html">回顧第 12 課：重送請求時如何避免重複建立？</a> · 看完小練習後可以直接回覆答案，我會依你的理解接著教下一小步。</footer>
+</main></body></html>
