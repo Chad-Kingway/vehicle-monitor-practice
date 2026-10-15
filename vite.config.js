@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
         input: {
           main: fileURLToPath(new URL("./index.html", import.meta.url)),
           dispatch: fileURLToPath(new URL("./dispatch.html", import.meta.url)),
+          uiTemplate: fileURLToPath(new URL("./ui-template.html", import.meta.url)),
         },
       },
     },
