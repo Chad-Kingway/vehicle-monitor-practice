@@ -12,7 +12,7 @@ export function mountMonitor() {
   const randomLink = element("a", "隨機送出一筆", "button-link");
   randomLink.target = "_blank"; randomLink.rel = "noopener";
   newRandomPassengerLink(randomLink); header.append(randomLink);
-  const fleet = element("section", undefined, "list-section");
+  const fleet = element("section", undefined, "list-section fleet-section");
   fleet.append(element("h2", "車隊"));
   const fleetList = element("div", undefined, "record-list"); fleet.append(fleetList);
   document.querySelector(".vehicle-card").before(fleet);
@@ -22,9 +22,9 @@ export function mountMonitor() {
   const follow = document.createElement("input"); follow.type = "checkbox";
   followLabel.append(follow, document.createTextNode("跟隨")); controls.append(locate, followLabel);
   document.querySelector(".vehicle-card").append(controls);
-  const requests = element("section", undefined, "list-section"); requests.append(element("h2", "乘車請求"));
+  const requests = element("section", undefined, "list-section request-section"); requests.append(element("h2", "乘車請求"));
   const requestList = element("div", undefined, "record-list"); requests.append(requestList);
-  const tasks = element("section", undefined, "list-section"); tasks.append(element("h2", "接送任務"));
+  const tasks = element("section", undefined, "list-section task-section"); tasks.append(element("h2", "接送任務"));
   const taskList = element("div", undefined, "record-list"); tasks.append(taskList);
   document.querySelector(".settings").before(requests, tasks);
   const speedForm = element("form", undefined, "speed-form");

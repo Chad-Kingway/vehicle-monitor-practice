@@ -9,14 +9,20 @@ export function element(tag, text, className) {
   if (className) node.className = className;
   return node;
 }
+function refreshPassengerHref(link, random) {
+  const target = new URL(location.pathname, location.origin);
+  target.searchParams.set("passenger", crypto.randomUUID());
+  if (random) target.searchParams.set("random", "1");
+  link.href = target.pathname + target.search;
+}
 export function newPassengerLink(link) {
-  const refresh = () => { link.href = `/?passenger=${crypto.randomUUID()}`; };
+  const refresh = () => refreshPassengerHref(link, false);
   refresh();
   link.addEventListener("click", refresh);
   link.addEventListener("auxclick", refresh);
 }
 export function newRandomPassengerLink(link) {
-  const refresh = () => { link.href = `/?passenger=${crypto.randomUUID()}&random=1`; };
+  const refresh = () => refreshPassengerHref(link, true);
   refresh();
   link.addEventListener("click", refresh);
   link.addEventListener("auxclick", refresh);
