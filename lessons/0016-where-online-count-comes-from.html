@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 16 課：在線車輛數從哪裡來？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 16</div><h1>在線車輛數從哪裡來？</h1><p class="subtitle">追蹤「在線 2」裡的 2 是怎麼數出來的。</p></header>
+<article>
+<h2>畫面只負責顯示，數字在另一段程式裡算</h2>
+<p>上一課看到 <code>{{ online() }}</code> 會把數字放到「在線」後面。這個數字的計算規則寫在 <a href="../src/app/monitor.component.ts"><code>MonitorComponent</code></a> 裡：</p>
+<pre><code>readonly online = computed(() =&gt;
+  this.client.state().snapshot?.vehicles
+    .filter(vehicle =&gt; vehicle.connection_status === 'online').length || 0
+);</code></pre>
+<p>不用一次讀懂全部符號。先把它當成三個動作：</p>
+<ol><li>拿到車輛清單。</li><li>只留下狀態是 <code>online</code> 的車。</li><li>數一數剩下幾台。</li></ol>
+<p>例如狀態是「在線、離線、在線」，留下兩台在線車，所以 <code>online</code> 算出的數字是 <code>2</code>。範本再把這個數字顯示出來。</p>
+<div class="callout"><strong>目前只需分清楚：</strong>範本的工作是顯示；元件裡的計算規則決定顯示哪個數字。</div>
+
+<section class="exercise"><h2>小練習</h2><p>三台車的狀態依序是「在線、離線、離線」。顯示的在線數會是多少？</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://angular.dev/guide/signals">Angular 官方：Signals</a> — 本專案用 <code>computed()</code> 根據目前資料算出一個值。</p><p>前一課：<a href="0015-show-a-value-in-angular-template.html">把一個數字放到 Angular 畫面</a> · 速查：<a href="../reference/angular-online-count.html">在線車輛數的計算</a></p>
+</article><footer>你可以只回覆在線車輛的台數；下一步再學會讀那行篩選清單的程式。</footer>
+</main></body></html>

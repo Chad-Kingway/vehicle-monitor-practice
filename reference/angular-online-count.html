@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：在線車輛數的計算</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>在線車輛數的計算</h1><article>
+<p><code>MonitorComponent</code> 的規則：</p><ol><li>取 Server 快照中的車輛。</li><li>保留 <code>connection_status === 'online'</code> 的車輛。</li><li>計算保留下來的數量。</li></ol>
+<p>例如「在線、離線、在線」→ 2 台在線。範本用 <code>{{ online() }}</code> 顯示這個數字。</p>
+<p><a href="../lessons/0016-where-online-count-comes-from.html">第 16 課：在線車輛數從哪裡來？</a> · <a href="../src/app/monitor.component.ts">MonitorComponent</a> · <a href="../lessons/0015-show-a-value-in-angular-template.html">第 15 課：範本文字</a></p>
+</article></main></body></html>
