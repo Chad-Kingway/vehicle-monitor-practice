@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 11 課：Simulation 怎麼保護共享狀態？</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main>
+<header><div class="kicker">Vehicle Monitor · Lesson 11</div><h1>Simulation 怎麼保護共享狀態？</h1><p class="subtitle">讀懂 <code>async with self.lock</code>，看多個請求如何共用同一把鎖。</p></header>
+<article>
+<h2>Simulation 只建立一把鎖</h2>
+<p><a href="../server/simulation.py"><code>Simulation.__init__</code></a> 建立 <code>self.lock = asyncio.Lock()</code>。這把鎖和 <code>self.requests</code>、<code>self.tasks</code> 等資料放在同一個 Simulation 物件上，所以呼叫它不同方法時會使用同一把鎖。</p>
+
+<h2><code>async with</code> 圈出一段獨佔區域</h2>
+<pre><code>async def submit(self, data):
+    async with self.lock:
+        key, existing = self.submission_identity(data)
+        return existing if existing is not None else self.create_request_locked(data, key)</code></pre>
+<p>進入區塊前，這個 coroutine 要先取得鎖。如果另一個 coroutine 正持有同一把鎖，它會在這裡等待；鎖釋放後才進入區塊。使用同一把鎖的狀態修改方法會依序進入，不會同時處於這段受保護的區域。</p>
+<p>離開區塊時，鎖會自動釋放；即使區塊裡提前 <code>return</code> 或發生例外，也會釋放。<code>async with</code> 把取得與釋放鎖的流程包在一起，避免忘記清理。</p>
+<div class="callout"><strong>在這個方法裡：</strong>先檢查是否已處理過相同請求，再決定回傳現有結果或建立新請求。這些步驟都放在共享的鎖保護範圍內。</div>
+<p><code>asyncio.Lock</code> 是協調 asyncio tasks 的鎖，不是給作業系統執行緒使用的鎖。Python 官方文件說明，它用來保證共享資源的獨佔存取，建議透過 <code>async with</code> 使用。</p>
+
+<section class="exercise"><h2>小練習</h2><p>如果把 <code>asyncio.Lock()</code> 移到每次 <code>submit()</code> 呼叫時才建立，每個請求會共用同一把鎖嗎？</p></section>
+
+<h2>延伸閱讀</h2><p>首選：<a href="https://docs.python.org/3.12/library/asyncio-sync.html#lock">Python 官方：asyncio Lock</a> — 看鎖如何等待、獨佔進入區塊，以及 <code>async with</code> 的等價流程。</p><p>程式位置：<a href="../server/simulation.py">server/simulation.py</a>。速查：<a href="../reference/python-simulation-lock.html">Simulation 共享狀態與 Lock</a>。</p>
+</article><footer><a href="0010-await-simulation-submit.html">回顧第 10 課：await 與 Simulation.submit()</a></footer>
+</main></body></html>

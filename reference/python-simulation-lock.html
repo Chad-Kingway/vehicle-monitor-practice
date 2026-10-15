@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>速查：Simulation 共享狀態與 Lock</title><link rel="stylesheet" href="../assets/lesson.css"></head>
+<body><main><div class="kicker">Reference</div><h1>Simulation 共享狀態與 Lock</h1><article>
+<h2>生命週期與使用方式</h2>
+<pre><code>class Simulation:
+    def __init__(self, ...):
+        self.lock = asyncio.Lock()
+
+    async def submit(self, data):
+        async with self.lock:
+            ...</code></pre>
+<ul><li>在 <code>Simulation</code> 建立一把鎖，讓這個物件的非同步方法共用它。</li><li>進入 <code>async with self.lock</code> 前先取得鎖；鎖被占用時，coroutine 會等待。</li><li>離開區塊時自動釋放，包括 <code>return</code> 或例外離開。</li><li><code>asyncio.Lock</code> 協調 asyncio tasks，不用於 OS thread 同步。</li></ul>
+<p><a href="../lessons/0011-simulation-async-lock.html">第 11 課：Simulation 怎麼保護共享狀態？</a> · <a href="../server/simulation.py">simulation.py</a></p>
+</article></main></body></html>

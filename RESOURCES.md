@@ -26,6 +26,8 @@
   說明字典中的 `**mapping` 如何展開鍵值，以及重複鍵由較後方的值覆蓋。
 - [Python 3.12: Coroutines and Tasks](https://docs.python.org/3.12/library/asyncio-task.html#coroutines)
   說明呼叫 `async def` 函式會建立 coroutine，以及 `await` 如何執行並取得結果。用於讀懂 `app.py` 對 `Simulation.submit()` 的呼叫。
+- [Python 3.12: asyncio Lock](https://docs.python.org/3.12/library/asyncio-sync.html#lock)
+  說明 asyncio tasks 如何透過 `Lock` 獨佔存取共享資源，以及用 `async with` 自動取得和釋放鎖。用於閱讀 `Simulation` 的共享狀態更新。
 - [FastAPI: Request Body](https://fastapi.tiangolo.com/tutorial/body/)
   說明以 Pydantic model 型別作為 API 參數時，FastAPI 如何解析與驗證 JSON request body。
 - [FastAPI: Body Fields](https://fastapi.tiangolo.com/tutorial/body-fields/)
