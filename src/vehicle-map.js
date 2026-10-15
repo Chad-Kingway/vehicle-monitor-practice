@@ -34,7 +34,10 @@ async function checkModelAssets() {
 }
 
 
-export async function createVehicleMap(vehicles, status, { center, onPick, preferenceScope = onPick ? "passenger" : "monitor" } = {}) {
+export async function createVehicleMap(vehicles, status, {
+  center, onPick, preferenceScope = onPick ? "passenger" : "monitor",
+  container, onPreferences, onError,
+} = {}) {
   const fleet = Array.isArray(vehicles) ? vehicles : [vehicles];
   const accessKey = import.meta.env.ACCESS_KEY;
   const accessToken = import.meta.env.ACCESS_TOKEN;
@@ -43,7 +46,7 @@ export async function createVehicleMap(vehicles, status, { center, onPick, prefe
   status("載入勤崴 SDK…");
   const MapThree = await loadMapThree();
   status("載入地圖…");
-  const map = await withTimeout(new MapThree(document.getElementById("map"), {
+  const map = await withTimeout(new MapThree(container, {
     accessKey, accessToken, style: "https://kw3dmap.localking.com.tw/openapi/map/kwmap.etxt",
     center: center || fleet[0]?.position || [121.54, 25.045], pitch: onPick ? 0 : 55,
     bearing: 0, zoom: onPick ? 14 : 16, trackResize: true,
@@ -58,25 +61,14 @@ export async function createVehicleMap(vehicles, status, { center, onPick, prefe
   let scaleControlDisabled = false;
   let appliedPoi = true;
   let appliedScale = 30;
-  const mapRegion = document.getElementById("map").parentElement;
-  const controls = document.createElement("div"); controls.className = "map-controls";
-  const poiButton = document.createElement("button"); poiButton.type = "button";
-  const scaleLabel = document.createElement("label"); scaleLabel.className = "map-scale-control";
-  scaleLabel.append(document.createTextNode("模型比例"));
-  const scaleInput = document.createElement("input"); scaleInput.type = "range"; scaleInput.min = "1"; scaleInput.max = "100"; scaleInput.step = "1"; scaleInput.setAttribute("aria-label", "模型比例");
-  const scaleValue = document.createElement("output");
-  scaleLabel.append(scaleInput, scaleValue);
-  const preferenceStatus = document.createElement("span"); preferenceStatus.className = "map-preference-status"; preferenceStatus.setAttribute("role", "status");
-  controls.append(poiButton, scaleLabel, preferenceStatus); mapRegion.append(controls);
-  const updateControls = () => {
-    poiButton.textContent = `POI：${preferences.poi ? "顯示" : "隱藏"}`;
-    poiButton.disabled = poiControlDisabled;
-    scaleInput.value = String(preferences.scale); scaleInput.disabled = scaleControlDisabled;
-    scaleValue.value = `${preferences.scale}`;
-  };
+  let preferenceError = "";
+  const publishPreferences = () => onPreferences?.({
+    ...preferences, poiDisabled: poiControlDisabled, scaleDisabled: scaleControlDisabled, error: preferenceError,
+  });
   const models = new Map();
   const latest = new Map();
   const pending = new Set();
+  let assetsReady = fleet.length ? Promise.resolve() : null;
   let followId;
   function applyPoi(value) {
     if (value) map.onLayer("poi_"); else map.offLayer("poi_");
@@ -89,46 +81,37 @@ export async function createVehicleMap(vehicles, status, { center, onPick, prefe
   }
   function savePreferences() {
     try { localStorage.setItem(preferenceKey, JSON.stringify(preferences)); }
-    catch { preferenceStatus.textContent = "偏好未保存"; return; }
-    preferenceStatus.textContent = "";
+    catch { preferenceError = "偏好未保存"; }
   }
   function applyLoadedPreferences() {
-    poiControlDisabled = false; scaleControlDisabled = false; updateControls();
+    poiControlDisabled = false; scaleControlDisabled = false; preferenceError = "";
     try { applyPoi(preferences.poi); appliedPoi = preferences.poi; }
     catch {
       try { applyPoi(appliedPoi); preferences.poi = appliedPoi; }
       catch { poiControlDisabled = true; }
-      preferenceStatus.textContent = "POI 套用失敗";
+      preferenceError = "POI 套用失敗";
     }
     try { applyScale(preferences.scale); appliedScale = preferences.scale; }
     catch {
       try { applyScale(appliedScale); preferences.scale = appliedScale; }
       catch { scaleControlDisabled = true; }
-      preferenceStatus.textContent = "模型比例套用失敗";
+      preferenceError = "模型比例套用失敗";
     }
-    updateControls();
+    publishPreferences();
   }
-  poiButton.addEventListener("click", () => {
-    const previous = preferences.poi;
-    try { applyPoi(!previous); appliedPoi = !previous; preferences.poi = !previous; updateControls(); savePreferences(); }
-    catch (error) {
-      try { applyPoi(previous); appliedPoi = previous; preferences.poi = previous; }
-      catch { poiControlDisabled = true; }
-      preferenceStatus.textContent = "POI 套用失敗"; updateControls(); status(error.message);
-    }
-  });
-  scaleInput.addEventListener("input", () => {
-    const previous = preferences.scale; const next = Number(scaleInput.value);
-    try { applyScale(next); appliedScale = next; preferences.scale = next; updateControls(); savePreferences(); }
-    catch (error) {
-      try { applyScale(previous); appliedScale = previous; preferences.scale = previous; }
-      catch { scaleControlDisabled = true; }
-      preferenceStatus.textContent = "模型比例套用失敗"; updateControls(); status(error.message);
-    }
-  });
+  function setPreferences(next) {
+    if (next.poi !== undefined && typeof next.poi !== "boolean") throw new Error("POI 必須為布林值。");
+    if (next.scale !== undefined && (!Number.isInteger(next.scale) || next.scale < 1 || next.scale > 100)) throw new Error("模型比例須為 1～100 的整數。");
+    preferences = { ...preferences, ...next };
+    applyLoadedPreferences();
+    const error = preferenceError;
+    if (!error) savePreferences();
+    publishPreferences();
+    if (error) throw new Error(error);
+  }
   window.addEventListener("storage", event => {
     if (event.key !== preferenceKey) return;
-    preferences = readPreferences(preferenceKey); updateControls(); applyLoadedPreferences();
+    preferences = readPreferences(preferenceKey); applyLoadedPreferences();
   });
   map.on("style.load", applyLoadedPreferences);
   applyLoadedPreferences();
@@ -142,6 +125,7 @@ export async function createVehicleMap(vehicles, status, { center, onPick, prefe
     pending.add(vehicle.id);
     let expired = false;
     try {
+      await (assetsReady ||= checkModelAssets().catch(error => { assetsReady = null; throw error; }));
       const loading = map.three.add3dModel({
         id: vehicle.id, obj: MODEL_URL, type: "gltf", coordinates: [...vehicle.position, 0],
         rotation: { ...INITIAL_ROTATION }, scale: MODEL_INITIAL_SCALE, anchor: "bottom",
@@ -173,6 +157,12 @@ export async function createVehicleMap(vehicles, status, { center, onPick, prefe
   function addMarker(point, label, kind) {
     if (!point) return;
     const icon = document.createElement("span"); icon.className = `route-marker route-marker-${kind}`; icon.textContent = label;
+    Object.assign(icon.style, {
+      display: "grid", placeItems: "center", width: "32px", height: "32px", border: "2px solid white",
+      borderRadius: kind === "origin" ? "50%" : "6px", color: "white",
+      background: kind === "origin" ? "var(--route-origin-color, #147a58)" : "var(--route-destination-color, #b04436)",
+      font: "bold 14px sans-serif", boxShadow: "0 2px 8px #0005",
+    });
     markers.push(new MapThree.Marker({ position: [...point], icon, altitude: 0, clickable: false, title: `${label}車點：${point.join(", ")}` }));
   }
   function addLine(coordinates, color, id) {
@@ -185,7 +175,7 @@ export async function createVehicleMap(vehicles, status, { center, onPick, prefe
     if (Number.isFinite(lng) && Number.isFinite(lat)) onPick([lng, lat]);
   });
   return {
-    clearRoute, locate,
+    clearRoute, locate, setPreferences,
     follow(id) { followId = id; const vehicle = latest.get(id); if (vehicle) locate(vehicle.position); },
     showPoints(pickup, destination) { clearRoute(); addMarker(pickup, "上", "origin"); addMarker(destination, "下", "destination"); map.redraw(); },
     showTask(task) {
@@ -230,7 +220,7 @@ export async function createVehicleMap(vehicles, status, { center, onPick, prefe
         latest.set(vehicle.id, vehicle);
         const model = models.get(vehicle.id);
         if (model) place(model, vehicle);
-        else void addVehicle(vehicle).catch(error => status(error.message));
+        else void addVehicle(vehicle).catch(error => { if (onError) onError(error); else status(error.message); });
         if (vehicle.id === followId) locate(vehicle.position);
       }
       map.redraw();

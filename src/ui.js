@@ -9,32 +9,15 @@ export function element(tag, text, className) {
   if (className) node.className = className;
   return node;
 }
-function refreshPassengerHref(link, random) {
-  const target = new URL(location.pathname, location.origin);
-  target.searchParams.set("passenger", crypto.randomUUID());
-  if (random) target.searchParams.set("random", "1");
-  link.href = target.pathname + target.search;
-}
-export function newPassengerLink(link) {
-  const refresh = () => refreshPassengerHref(link, false);
-  refresh();
-  link.addEventListener("click", refresh);
-  link.addEventListener("auxclick", refresh);
-}
-export function newRandomPassengerLink(link) {
-  const refresh = () => refreshPassengerHref(link, true);
-  refresh();
-  link.addEventListener("click", refresh);
-  link.addEventListener("auxclick", refresh);
-}
-export async function api(url, { method = "GET", body, signal } = {}) {
+export async function api(url, { method = "GET", body, signal, timeout = 15000 } = {}) {
   const response = await fetch(url, {
-    method, cache: "no-store", signal: signal || AbortSignal.timeout(15000),
+    method, cache: "no-store", signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout),
     ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
   });
   const data = await response.json();
   if (!response.ok) {
-    if (typeof data.detail === "string") throw new Error(data.detail);
+    const fail = (message) => { throw Object.assign(new Error(message), { status: response.status }); };
+    if (typeof data.detail === "string") fail(data.detail);
     if (Array.isArray(data.detail)) {
       const labels = { report_interval_seconds: "車輛回報間隔", poll_interval_seconds: "網頁更新間隔" };
       const messages = data.detail.map(item => {
@@ -43,44 +26,38 @@ export async function api(url, { method = "GET", body, signal } = {}) {
         if (field && item.type === "less_than_equal") return `${field}不得大於 60 秒。`;
         return String(item.msg || "設定無效").replace(/^Value error, /, "");
       });
-      throw new Error(messages.join(" "));
+      fail(messages.join(" "));
     }
-    throw new Error(`HTTP ${response.status}`);
+    fail(`HTTP ${response.status}`);
   }
   return data;
 }
-// 只有成功讀取才替換畫面資料，斷線保留最後狀態。
-export function startPolling(load, render, connection, onStatus) {
-  let stopped = false;
-  let timer;
-  let controller;
-  let interval = 1000;
-  async function poll() {
-    if (stopped) return;
-    const started = performance.now();
-    controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    try {
-      const data = await load(controller.signal);
-      interval = (data.settings?.poll_interval_seconds || interval / 1000) * 1000;
-      render(data);
-      connection.textContent = "Server 已連線";
-      connection.dataset.state = "online";
-      onStatus?.(true);
-    } catch {
-      if (!stopped) {
-        connection.textContent = "Server 連線中斷";
-        connection.dataset.state = "offline";
-        onStatus?.(false);
-      }
-    } finally {
-      clearTimeout(timeout);
-      if (!stopped) timer = setTimeout(poll, Math.max(0, interval - (performance.now() - started)));
-    }
-  }
-  window.addEventListener("pagehide", () => { stopped = true; clearTimeout(timer); controller?.abort(); });
-  window.addEventListener("pageshow", (event) => { if (event.persisted) { stopped = false; void poll(); } });
-  void poll();
+export function mountMapControls(client, region) {
+  const controls = element("div", undefined, "map-controls");
+  const poi = element("button", "POI：顯示"); poi.type = "button";
+  const label = element("label", "模型比例", "map-scale-control");
+  const scale = document.createElement("input");
+  Object.assign(scale, { type: "range", min: "1", max: "100", step: "1", value: "30" });
+  scale.setAttribute("aria-label", "模型比例");
+  const output = element("output", "30");
+  const status = element("span", undefined, "map-preference-status"); status.setAttribute("role", "status");
+  label.append(scale, output); controls.append(poi, label, status); region.append(controls);
+  client.subscribe(state => {
+    const preferences = state.map.preferences;
+    const ready = state.map.status === "ready";
+    poi.disabled = !ready || preferences?.poiDisabled;
+    scale.disabled = !ready || preferences?.scaleDisabled;
+    if (!preferences) return;
+    poi.textContent = "POI：" + (preferences.poi ? "顯示" : "隱藏");
+    scale.value = preferences.scale; output.value = preferences.scale;
+    status.textContent = preferences.error;
+  });
+  const apply = values => {
+    try { client.actions.setMapPreferences(values); }
+    catch (error) { status.textContent = error.message; }
+  };
+  poi.addEventListener("click", () => apply({ poi: !client.getState().map.preferences.poi }));
+  scale.addEventListener("input", () => apply({ scale: Number(scale.value) }));
 }
 export function requestCard(request, cancel) {
   const card = element("article", undefined, "record-card");
